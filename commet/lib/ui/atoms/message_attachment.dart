@@ -45,6 +45,15 @@ class _MessageAttachmentState extends State<MessageAttachment> {
     }
 
     final attachment = widget.attachment;
+
+    // Voice/audio messages with waveform rendering
+    if (attachment is AudioAttachment) {
+      if (attachment.isVoiceMessage) {
+        return buildVoiceMessage(attachment);
+      }
+      return buildAudio(attachment);
+    }
+
     if (attachment is FileAttachment) {
       if (attachment.mimeType != null &&
           Mime.playableAudioTypes.contains(attachment.mimeType!)) {
@@ -240,6 +249,72 @@ class _MessageAttachmentState extends State<MessageAttachment> {
     return BackgroundTaskStatus.completed;
   }
 
+  /// Renders a voice message with waveform visualization and duration
+  Widget buildVoiceMessage(AudioAttachment attachment) {
+    final durationText = attachment.duration != null
+        ? _formatDuration(attachment.duration!)
+        : "";
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 300),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Play button (delegates to audio player on tap)
+          Icon(Icons.play_circle_fill,
+              size: 32, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 8),
+          // Waveform or fallback bar
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (attachment.waveform != null &&
+                    attachment.waveform!.isNotEmpty)
+                  CustomPaint(
+                    size: const Size(double.infinity, 28),
+                    painter:
+                        _WaveformPainter(attachment.waveform!, Theme.of(context).colorScheme.primary),
+                  )
+                else
+                  // Fallback: simple gradient bar
+                  Container(
+                    height: 28,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      gradient: LinearGradient(colors: [
+                        Theme.of(context).colorScheme.primary.withAlpha(80),
+                        Theme.of(context).colorScheme.primary.withAlpha(30),
+                      ]),
+                    ),
+                  ),
+                if (durationText.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: tiamat.Text.labelLow(durationText),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.mic, size: 16, color: Theme.of(context).colorScheme.primary),
+        ],
+      ),
+    );
+  }
+
+  static String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return "$minutes:$seconds";
+  }
+
   Widget buildAudio(FileAttachment attachment) {
     return AudioPlayer(
       file: attachment.file,
@@ -247,4 +322,39 @@ class _MessageAttachmentState extends State<MessageAttachment> {
       fileSize: attachment.fileSize,
     );
   }
+}
+
+/// Custom painter for rendering voice message waveform bars
+class _WaveformPainter extends CustomPainter {
+  final List<double> samples;
+  final Color color;
+  _WaveformPainter(this.samples, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (samples.isEmpty) return;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 2.5;
+
+    // Downsample to fit available width (max ~40 bars)
+    final barCount = (size.width / 4.5).floor().clamp(1, samples.length);
+    final step = samples.length / barCount;
+
+    for (int i = 0; i < barCount; i++) {
+      final sampleIdx = (i * step).floor().clamp(0, samples.length - 1);
+      final val = samples[sampleIdx].clamp(0.05, 1.0);
+      final barHeight = val * (size.height - 4) + 2;
+      final x = (i * size.width / barCount) + 2;
+      final y1 = (size.height - barHeight) / 2;
+      final y2 = y1 + barHeight;
+      canvas.drawLine(Offset(x, y1), Offset(x, y2), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WaveformPainter old) =>
+      old.samples != samples || old.color != color;
 }

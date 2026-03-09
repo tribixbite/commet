@@ -1,10 +1,12 @@
 import 'package:commet/client/client.dart';
+import 'package:commet/client/matrix/matrix_room.dart';
 import 'package:commet/ui/navigation/adaptive_dialog.dart';
 import 'package:commet/ui/pages/get_or_create_room/room_creator.dart';
 import 'package:commet/utils/error_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+import 'package:matrix/matrix.dart' as matrix;
 import 'package:tiamat/atoms/tile.dart';
 
 import 'package:tiamat/tiamat.dart' as tiamat;
@@ -54,6 +56,8 @@ class _RoomSecuritySettingsPageState extends State<RoomSecuritySettingsPage> {
         if (widget.room.client.supportsE2EE && widget.showEncryptionToggle)
           buildE2EEToggle(),
         buildRoomVisibility(),
+        // Server ACL management for Matrix rooms with admin permissions
+        if (widget.room is MatrixRoom) _serverAclSection(),
       ],
     );
   }
@@ -92,6 +96,191 @@ class _RoomSecuritySettingsPageState extends State<RoomSecuritySettingsPage> {
         ),
       ),
     );
+  }
+
+  /// Server ACL (Access Control List) management section
+  /// Allows admins to allow/deny specific servers from participating
+  Widget _serverAclSection() {
+    final matrixRoom = (widget.room as MatrixRoom).matrixRoom;
+    final aclEvent = matrixRoom.getState('m.room.server_acl');
+    final canEdit = widget.room.permissions.canChangeVisibility;
+
+    // Parse current ACL entries
+    List<String> allowList = [];
+    List<String> denyList = [];
+    bool allowIpLiterals = true;
+
+    if (aclEvent != null) {
+      final content = aclEvent.content;
+      allowList = (content['allow'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          ['*'];
+      denyList =
+          (content['deny'] as List?)?.map((e) => e.toString()).toList() ??
+              [];
+      allowIpLiterals = content['allow_ip_literals'] as bool? ?? true;
+    } else {
+      allowList = ['*'];
+    }
+
+    return tiamat.Panel(
+      mode: tiamat.TileType.surfaceContainerLow,
+      header: "Server ACL",
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: tiamat.Text.labelLow(
+              "Control which servers can participate in this room. "
+              "Requires admin permissions.",
+            ),
+          ),
+          // Allow IP literals toggle
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Flexible(
+                    child: Text("Allow IP literals",
+                        style: TextStyle(fontSize: 13))),
+                tiamat.Switch(
+                  state: allowIpLiterals,
+                  onChanged: canEdit
+                      ? (value) {
+                          _updateAcl(matrixRoom,
+                              allow: allowList,
+                              deny: denyList,
+                              allowIpLiterals: value);
+                        }
+                      : null,
+                ),
+              ],
+            ),
+          ),
+          // Denied servers list
+          if (denyList.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: tiamat.Text.labelEmphasised("Denied Servers"),
+            ),
+            for (final server in denyList)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 2, 8, 2),
+                child: Row(
+                  children: [
+                    const Icon(Icons.block, size: 14, color: Colors.red),
+                    const SizedBox(width: 6),
+                    Expanded(
+                        child: Text(server,
+                            style: const TextStyle(fontSize: 12))),
+                    if (canEdit)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        onPressed: () {
+                          final newDeny = List<String>.from(denyList)
+                            ..remove(server);
+                          _updateAcl(matrixRoom,
+                              allow: allowList,
+                              deny: newDeny,
+                              allowIpLiterals: allowIpLiterals);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+          ],
+          // Add server to deny list
+          if (canEdit)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              child: OutlinedButton.icon(
+                onPressed: () => _addServerToDenyList(
+                    matrixRoom, allowList, denyList, allowIpLiterals),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text("Block Server",
+                    style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  minimumSize: const Size(0, 32),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Shows dialog to add a server to the deny list
+  void _addServerToDenyList(matrix.Room matrixRoom, List<String> allowList,
+      List<String> denyList, bool allowIpLiterals) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Block Server"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: "example.com",
+            labelText: "Server domain",
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel")),
+          TextButton(
+            onPressed: () {
+              final server = controller.text.trim();
+              if (server.isNotEmpty) {
+                final newDeny = List<String>.from(denyList)..add(server);
+                _updateAcl(matrixRoom,
+                    allow: allowList,
+                    deny: newDeny,
+                    allowIpLiterals: allowIpLiterals);
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text("Block"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sends the m.room.server_acl state event with updated values
+  Future<void> _updateAcl(matrix.Room matrixRoom,
+      {required List<String> allow,
+      required List<String> deny,
+      required bool allowIpLiterals}) async {
+    try {
+      await matrixRoom.client.setRoomStateWithKey(
+        matrixRoom.id,
+        'm.room.server_acl',
+        '',
+        {
+          'allow': allow,
+          'deny': deny,
+          'allow_ip_literals': allowIpLiterals,
+        },
+      );
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Server ACL updated")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to update ACL: $e")),
+        );
+      }
+    }
   }
 
   Widget buildRoomVisibility() {

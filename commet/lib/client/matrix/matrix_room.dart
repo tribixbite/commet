@@ -32,6 +32,7 @@ import 'package:commet/client/matrix/timeline_events/matrix_timeline_event_encry
 import 'package:commet/client/matrix/timeline_events/matrix_timeline_event_membership.dart';
 import 'package:commet/client/matrix/timeline_events/matrix_timeline_event_message.dart';
 import 'package:commet/client/matrix/timeline_events/matrix_timeline_event_pinned_messages.dart';
+import 'package:commet/client/matrix/timeline_events/matrix_timeline_event_location.dart';
 import 'package:commet/client/matrix/timeline_events/matrix_timeline_event_poll.dart';
 import 'package:commet/client/matrix/timeline_events/matrix_timeline_event_redaction.dart';
 import 'package:commet/client/matrix/timeline_events/matrix_timeline_event_sticker.dart';
@@ -545,6 +546,10 @@ class MatrixRoom extends Room {
         if (event.messageType == "m.emote")
           return MatrixTimelineEventEmote(event, client: c);
 
+        // MSC3488 location messages sent as m.room.message with msgtype m.location
+        if (event.messageType == "m.location")
+          return MatrixTimelineEventLocation(event, client: c);
+
         return MatrixTimelineEventMessage(event, client: c);
       }
 
@@ -579,6 +584,13 @@ class MatrixRoom extends Room {
         "m.poll.start" => MatrixTimelineEventPoll(event, client: c),
         "org.matrix.msc3381.poll.start" =>
           MatrixTimelineEventPoll(event, client: c),
+        // MSC3488/3489 Location sharing events
+        "m.location" => MatrixTimelineEventLocation(event, client: c),
+        "org.matrix.msc3488.location" =>
+          MatrixTimelineEventLocation(event, client: c),
+        "org.matrix.msc3672.beacon" =>
+          MatrixTimelineEventLocation(event, client: c),
+        "m.beacon" => MatrixTimelineEventLocation(event, client: c),
         _ => null
       };
 
@@ -900,7 +912,7 @@ class MatrixRoom extends Room {
       case matrix.JoinRules.public:
         return RoomVisibilityPublic();
       case matrix.JoinRules.knock:
-        return RoomVisibilityPrivate();
+        return RoomVisibilityKnock();
       case matrix.JoinRules.invite:
         return RoomVisibilityPrivate();
       case matrix.JoinRules.private:
@@ -915,7 +927,7 @@ class MatrixRoom extends Room {
                 .toList() ??
             []);
       case matrix.JoinRules.knockRestricted:
-        return RoomVisibilityPrivate();
+        return RoomVisibilityKnock();
       case null:
         return RoomVisibilityPublic();
     }

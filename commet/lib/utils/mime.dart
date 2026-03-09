@@ -30,6 +30,19 @@ class Mime {
     "audio/mpeg",
   };
 
+  /// All recognized audio MIME types (alias for playableAudioTypes + extras)
+  static const audioTypes = {
+    "audio/x-wav",
+    "audio/ogg",
+    "audio/wav",
+    "audio/mp3",
+    "audio/mpeg",
+    "audio/aac",
+    "audio/flac",
+    "audio/webm",
+    "audio/mp4",
+  };
+
   static bool isText(String mime) => mime.startsWith("text/");
 
   static const videoTypes = {

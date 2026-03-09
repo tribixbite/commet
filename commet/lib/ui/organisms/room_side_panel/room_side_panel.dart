@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:commet/client/client.dart';
 import 'package:commet/client/components/calendar_room/calendar_room_component.dart';
 import 'package:commet/config/layout_config.dart';
 import 'package:commet/main.dart';
@@ -373,6 +374,8 @@ class _RoomSidePanelState extends State<RoomSidePanel> {
                     "${room.notificationCount}"),
                 _infoRow(Icons.star, "Favourite",
                     room.isFavourite ? "Yes" : "No"),
+                _infoRow(Icons.security,
+                    "Join Rule", _joinRuleLabel(room)),
                 _infoRow(Icons.tag, "Room ID", room.identifier),
                 const Divider(height: 24),
                 // Quick actions
@@ -408,6 +411,14 @@ class _RoomSidePanelState extends State<RoomSidePanel> {
         ],
       ),
     );
+  }
+
+  String _joinRuleLabel(Room room) {
+    final v = room.visibility;
+    if (v is RoomVisibilityPublic) return "Public";
+    if (v is RoomVisibilityKnock) return "Knock";
+    if (v is RoomVisibilityRestricted) return "Restricted";
+    return "Private";
   }
 
   Widget _infoRow(IconData icon, String label, String value) {

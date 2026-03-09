@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   RoomFilter _roomFilter = RoomFilter.all;
 
   late List<StreamSubscription> subscriptions;
+  ClientConnectionStatus _connectionStatus = ClientConnectionStatus.unknown;
 
   @override
   void initState() {
@@ -56,6 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
       }),
       EventBus.setFilterClient.stream.listen(setFilterClient),
     ];
+
+    // Listen to connection status from all clients
+    for (final client in widget.clientManager.clients) {
+      subscriptions.add(
+        client.connectionStatusChanged.stream.listen((update) {
+          if (mounted) {
+            setState(() {
+              _connectionStatus = update.status;
+            });
+          }
+        }),
+      );
+    }
 
     if (preferences.checkForUpdates.value == true) {
       UpdateChecker.checkForUpdates();
@@ -120,6 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+        // Connection status indicator
+        if (_connectionStatus == ClientConnectionStatus.connecting ||
+            _connectionStatus == ClientConnectionStatus.disconnected)
+          _connectionStatusBanner(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: TextField(
@@ -209,6 +227,43 @@ class _HomeScreenState extends State<HomeScreen> {
     var allRooms = filterClient?.rooms ?? widget.clientManager.rooms;
     var favs = allRooms.where((r) => r.isFavourite).toList();
     return _filterBySearch(favs);
+  }
+
+  /// Connection status banner shown when syncing or disconnected
+  Widget _connectionStatusBanner() {
+    final isDisconnected =
+        _connectionStatus == ClientConnectionStatus.disconnected;
+    final color = isDisconnected
+        ? Theme.of(context).colorScheme.errorContainer
+        : Theme.of(context).colorScheme.tertiaryContainer;
+    final textColor = isDisconnected
+        ? Theme.of(context).colorScheme.onErrorContainer
+        : Theme.of(context).colorScheme.onTertiaryContainer;
+    final icon = isDisconnected ? Icons.cloud_off : Icons.sync;
+    final text = isDisconnected ? "Disconnected" : "Syncing...";
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: color,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: textColor),
+          const SizedBox(width: 6),
+          Text(text,
+              style: TextStyle(fontSize: 12, color: textColor)),
+          if (!isDisconnected) ...[
+            const SizedBox(width: 6),
+            SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: textColor)),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _filterChip(String label, RoomFilter filter) {

@@ -6,6 +6,7 @@ import 'package:commet/client/timeline_events/timeline_event_emote.dart';
 import 'package:commet/client/timeline_events/timeline_event_encrypted.dart';
 import 'package:commet/client/timeline_events/timeline_event_generic.dart';
 import 'package:commet/client/timeline_events/timeline_event_message.dart';
+import 'package:commet/client/timeline_events/timeline_event_location.dart';
 import 'package:commet/client/timeline_events/timeline_event_poll.dart';
 import 'package:commet/client/timeline_events/timeline_event_sticker.dart';
 import 'package:commet/config/layout_config.dart';
@@ -16,6 +17,7 @@ import 'package:commet/ui/atoms/adaptive_context_menu.dart';
 import 'package:commet/ui/atoms/emoji_widget.dart';
 import 'package:commet/ui/molecules/timeline_events/events/timeline_event_view_generic.dart';
 import 'package:commet/ui/molecules/timeline_events/events/timeline_event_view_message.dart';
+import 'package:commet/ui/molecules/timeline_events/events/timeline_event_view_location.dart';
 import 'package:commet/ui/molecules/timeline_events/events/timeline_event_view_poll.dart';
 import 'package:commet/ui/molecules/timeline_events/timeline_event_date_time_marker.dart';
 import 'package:commet/ui/molecules/timeline_events/timeline_event_layout.dart';
@@ -68,6 +70,7 @@ enum TimelineEventWidgetDisplayType {
   message,
   generic,
   poll,
+  location,
   hidden,
 }
 
@@ -139,6 +142,8 @@ class TimelineViewEntryState extends State<TimelineViewEntry>
       return TimelineEventWidgetDisplayType.message;
     } else if (event is TimelineEventPoll) {
       return TimelineEventWidgetDisplayType.poll;
+    } else if (event is TimelineEventLocation) {
+      return TimelineEventWidgetDisplayType.location;
     } else if (event is TimelineEventGeneric) {
       return TimelineEventWidgetDisplayType.generic;
     } else if (event.status == TimelineEventStatus.error) {
@@ -417,6 +422,16 @@ class TimelineViewEntryState extends State<TimelineViewEntry>
           event: event,
           room: widget.timeline.room,
           // TODO: wire up vote submission via room.sendEvent
+        );
+      }
+    }
+    if (_widgetType == TimelineEventWidgetDisplayType.location) {
+      final event = widget.timeline.events[widget.initialIndex];
+      if (event is TimelineEventLocation) {
+        return TimelineEventViewLocation(
+          key: eventKey,
+          event: event,
+          room: widget.timeline.room,
         );
       }
     }

@@ -85,6 +85,25 @@ class ImageAttachment extends FileAttachment {
   });
 }
 
+/// Audio/voice message attachment with optional waveform and duration
+class AudioAttachment extends FileAttachment {
+  final Duration? duration;
+
+  /// Normalized waveform samples (0.0-1.0) for visual display
+  final List<double>? waveform;
+
+  /// Whether this is a voice message (vs generic audio file)
+  final bool isVoiceMessage;
+
+  AudioAttachment(super.file,
+      {required super.name,
+      required super.mimeType,
+      this.duration,
+      this.waveform,
+      this.isVoiceMessage = false,
+      super.fileSize});
+}
+
 class VideoAttachment extends FileAttachment {
   final ImageProvider? thumbnail;
   final double? width;

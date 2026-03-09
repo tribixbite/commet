@@ -1,6 +1,9 @@
 import 'package:commet/client/client.dart';
+import 'package:commet/client/matrix/matrix_client.dart';
+import 'package:commet/client/room.dart';
 import 'package:commet/client/room_preview.dart';
 import 'package:commet/client/space_child.dart';
+import 'package:matrix/matrix.dart' as matrix;
 import 'package:commet/ui/atoms/room_preview.dart';
 import 'package:commet/utils/debounce.dart';
 import 'package:flutter/material.dart';
@@ -91,26 +94,79 @@ class _JoinRoomViewState extends State<JoinRoomView> {
             ),
           ],
         ),
-        tiamat.Button(
-          text: promptConfirmRoomJoin,
-          isLoading: joinLoading,
-          onTap: () async {
-            setState(() {
-              joinLoading = true;
-            });
+        // Show knock button for knock-rule rooms, join button otherwise
+        if (preview?.visibility is RoomVisibilityKnock)
+          tiamat.Button(
+            text: "Request to Join",
+            isLoading: joinLoading,
+            onTap: () async {
+              setState(() {
+                joinLoading = true;
+              });
+              try {
+                await _knockRoom(text);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("Knock request sent. Waiting for approval.")),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Failed to knock: $e")),
+                  );
+                }
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    joinLoading = false;
+                  });
+                }
+              }
+            },
+          )
+        else
+          tiamat.Button(
+            text: promptConfirmRoomJoin,
+            isLoading: joinLoading,
+            onTap: () async {
+              setState(() {
+                joinLoading = true;
+              });
 
-            SpaceChild? result;
-            if (preview?.type == RoomType.space) {
-              result = SpaceChildSpace(await widget.client.joinSpace(text));
-            } else {
-              result = SpaceChildRoom(await widget.client.joinRoom(text));
-            }
+              SpaceChild? result;
+              if (preview?.type == RoomType.space) {
+                result = SpaceChildSpace(await widget.client.joinSpace(text));
+              } else {
+                result = SpaceChildRoom(await widget.client.joinRoom(text));
+              }
 
-            widget.onPicked?.call(result);
-          },
-        )
+              widget.onPicked?.call(result);
+            },
+          )
       ],
     );
+  }
+
+  /// Send a knock request to the room (Room v7+ knock join rule)
+  /// Uses the /_matrix/client/v3/knock/{roomIdOrAlias} endpoint
+  Future<void> _knockRoom(String address) async {
+    if (widget.client is MatrixClient) {
+      final mc = widget.client as MatrixClient;
+      final info = mc.parseAddressToIdAndVia(address);
+      final roomId = info?.$1 ?? address;
+      final via = info?.$2;
+
+      // Use raw API call since the SDK may not expose knock() directly
+      await mc.getMatrixClient().request(
+        matrix.RequestType.POST,
+        '/client/v3/knock/${Uri.encodeComponent(roomId)}',
+        data: {
+          if (via != null) 'server_name': via,
+        },
+      );
+    }
   }
 
   void onTextChanged(String value) {

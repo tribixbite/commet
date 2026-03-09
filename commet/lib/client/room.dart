@@ -22,6 +22,7 @@ abstract class RoomVisibility {
     return switch (visibility) {
       final RoomVisibilityPublic _ => Icons.public,
       final RoomVisibilityPrivate _ => Icons.lock,
+      final RoomVisibilityKnock _ => Icons.door_front_door,
       final RoomVisibilityRestricted _ => Icons.shield,
       _ => Icons.question_mark,
     };
@@ -32,6 +33,16 @@ class RoomVisibilityPrivate implements RoomVisibility {
   @override
   bool operator ==(Object other) {
     if (other is RoomVisibilityPrivate) return true;
+    if (identical(this, other)) return true;
+    return false;
+  }
+}
+
+/// Knock rooms - users must request to join (Room v7+)
+class RoomVisibilityKnock implements RoomVisibility {
+  @override
+  bool operator ==(Object other) {
+    if (other is RoomVisibilityKnock) return true;
     if (identical(this, other)) return true;
     return false;
   }

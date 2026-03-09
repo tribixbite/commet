@@ -179,6 +179,34 @@ class MatrixTimelineEventMessage extends MatrixTimelineEvent
               fileSize: event.infoMap['size'] as int?,
               height: height);
         }
+      } else if (Mime.audioTypes.contains(event.attachmentMimetype) ||
+          event.messageType == 'm.audio') {
+        // Parse waveform data if present (MSC3245 voice messages)
+        List<double>? waveform;
+        final waveformData = event.content
+            .tryGetMap<String, dynamic>('org.matrix.msc1767.audio')
+            ?.tryGetList<num>('waveform');
+        if (waveformData != null && waveformData.isNotEmpty) {
+          final maxVal =
+              waveformData.fold<num>(1, (a, b) => a > b ? a : b).toDouble();
+          waveform = waveformData
+              .map((v) => maxVal > 0 ? v.toDouble() / maxVal : 0.0)
+              .toList();
+        }
+
+        // Check if this is a voice message (MSC3245)
+        final isVoice =
+            event.content.containsKey('org.matrix.msc3245.voice') ||
+                event.messageType == 'm.audio';
+
+        attachment = AudioAttachment(
+            MxcFileProvider(mx, event.attachmentMxcUrl!, event: event),
+            name: filename,
+            mimeType: event.attachmentMimetype,
+            duration: event.attachmentDuration,
+            waveform: waveform,
+            isVoiceMessage: isVoice,
+            fileSize: event.infoMap['size'] as int?);
       } else {
         attachment = FileAttachment(
             MxcFileProvider(mx, event.attachmentMxcUrl!, event: event),
