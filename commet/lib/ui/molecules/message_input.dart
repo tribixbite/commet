@@ -895,22 +895,94 @@ class MessageInputState extends State<MessageInput> {
           tween: Tween<double>(begin: 0, end: targetValue),
           duration: Durations.medium1,
           builder: (context, value, child) {
-            return SizedBox(
-                width: widget.size,
-                height: widget.size,
-                child: tiamat.CircleButton(
-                  icon: Icons.send,
-                  radius: widget.size * widget.iconScale,
-                  onPressed: sendMessage,
-                  color: Color.lerp(
-                      Theme.of(context).colorScheme.primary.withAlpha(0),
-                      Theme.of(context).colorScheme.primary,
-                      value),
-                  iconColor: Color.lerp(Theme.of(context).colorScheme.secondary,
-                      Theme.of(context).colorScheme.onPrimary, value),
-                ));
+            return GestureDetector(
+                onLongPress: canSend ? () => _showScheduleDialog(context) : null,
+                child: SizedBox(
+                    width: widget.size,
+                    height: widget.size,
+                    child: tiamat.CircleButton(
+                      icon: Icons.send,
+                      radius: widget.size * widget.iconScale,
+                      onPressed: sendMessage,
+                      color: Color.lerp(
+                          Theme.of(context).colorScheme.primary.withAlpha(0),
+                          Theme.of(context).colorScheme.primary,
+                          value),
+                      iconColor: Color.lerp(
+                          Theme.of(context).colorScheme.secondary,
+                          Theme.of(context).colorScheme.onPrimary,
+                          value),
+                    )));
           },
         ));
+  }
+
+  /// Shows a dialog to schedule a message for later delivery
+  void _showScheduleDialog(BuildContext context) {
+    final now = DateTime.now();
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Schedule Message",
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            tiamat.Text.labelLow(
+                "Long-press send to schedule. Message: \"${controller.text.length > 40 ? '${controller.text.substring(0, 40)}...' : controller.text}\""),
+            const SizedBox(height: 12),
+            ...[
+              ("In 30 minutes", now.add(const Duration(minutes: 30))),
+              ("In 1 hour", now.add(const Duration(hours: 1))),
+              ("In 3 hours", now.add(const Duration(hours: 3))),
+              ("Tomorrow morning",
+                  DateTime(now.year, now.month, now.day + 1, 9, 0)),
+            ].map((option) => ListTile(
+                  leading: const Icon(Icons.schedule, size: 20),
+                  title: Text(option.$1),
+                  subtitle: Text(
+                    "${option.$2.hour.toString().padLeft(2, '0')}:${option.$2.minute.toString().padLeft(2, '0')}",
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  onTap: () {
+                    _scheduleMessage(option.$2);
+                    Navigator.of(ctx).pop();
+                  },
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Stores a scheduled message for later sending
+  void _scheduleMessage(DateTime sendAt) {
+    if (controller.text.trim().isEmpty) return;
+    if (widget.room == null) return;
+
+    preferences.addScheduledMessage(
+      widget.room!.identifier,
+      widget.room!.client.identifier,
+      controller.text.trim(),
+      sendAt,
+    );
+
+    controller.clear();
+    setState(() {});
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              "Message scheduled for ${sendAt.hour.toString().padLeft(2, '0')}:${sendAt.minute.toString().padLeft(2, '0')}"),
+        ),
+      );
+    }
   }
 
   Widget toggleEmojiButton() {

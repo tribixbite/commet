@@ -545,4 +545,46 @@ class Preferences {
     templates.removeWhere((s) => s.contains('"name":"$name"'));
     await _preferences?.setStringList(_templatesKey, templates);
   }
+
+  // ---- Scheduled Messages ----
+
+  static const String _scheduledMessagesKey = "scheduled_messages";
+
+  /// Gets all scheduled messages
+  /// Each: {"roomId": "...", "clientId": "...", "message": "...", "sendAt": millis}
+  List<Map<String, dynamic>> getScheduledMessages() {
+    final raw = _preferences?.getStringList(_scheduledMessagesKey);
+    if (raw == null) return [];
+    return raw.map((s) => jsonDecode(s) as Map<String, dynamic>).toList();
+  }
+
+  /// Adds a scheduled message
+  Future<void> addScheduledMessage(
+      String roomId, String clientId, String message, DateTime sendAt) async {
+    final items = _preferences?.getStringList(_scheduledMessagesKey) ?? [];
+    items.add(jsonEncode({
+      'roomId': roomId,
+      'clientId': clientId,
+      'message': message,
+      'sendAt': sendAt.millisecondsSinceEpoch,
+    }));
+    await _preferences?.setStringList(_scheduledMessagesKey, items);
+  }
+
+  /// Removes a scheduled message by index
+  Future<void> removeScheduledMessage(int index) async {
+    final items = _preferences?.getStringList(_scheduledMessagesKey) ?? [];
+    if (index >= 0 && index < items.length) {
+      items.removeAt(index);
+      await _preferences?.setStringList(_scheduledMessagesKey, items);
+    }
+  }
+
+  /// Gets scheduled messages that are due (sendAt <= now)
+  List<Map<String, dynamic>> getDueScheduledMessages() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return getScheduledMessages()
+        .where((m) => (m['sendAt'] as int) <= now)
+        .toList();
+  }
 }

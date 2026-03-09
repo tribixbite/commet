@@ -11,6 +11,7 @@ import 'package:commet/ui/molecules/direct_message_list.dart';
 import 'package:commet/ui/molecules/space_viewer.dart';
 import 'package:commet/ui/navigation/navigation_utils.dart';
 import 'package:commet/ui/organisms/background_task_view/background_task_view_container.dart';
+import 'package:commet/ui/organisms/command_palette/command_palette.dart';
 import 'package:commet/ui/organisms/home_screen/home_screen.dart';
 import 'package:commet/ui/organisms/room_quick_access_menu/room_quick_access_menu_desktop.dart';
 import 'package:commet/ui/organisms/room_side_panel/room_side_panel.dart';
@@ -28,6 +29,11 @@ import 'package:tiamat/atoms/tile.dart';
 
 import 'package:tiamat/tiamat.dart' as tiamat;
 
+/// Intent for opening the command palette
+class OpenCommandPaletteIntent extends Intent {
+  const OpenCommandPaletteIntent();
+}
+
 class MainPageViewDesktop extends StatelessWidget {
   const MainPageViewDesktop(this.state, {super.key});
   final MainPageState state;
@@ -40,7 +46,23 @@ class MainPageViewDesktop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return tiamat.Foundation(
+    return Shortcuts(
+      shortcuts: const {
+        SingleActivator(LogicalKeyboardKey.keyK, control: true):
+            OpenCommandPaletteIntent(),
+      },
+      child: Actions(
+        actions: {
+          OpenCommandPaletteIntent: CallbackAction<OpenCommandPaletteIntent>(
+            onInvoke: (_) {
+              CommandPalette.show(context);
+              return null;
+            },
+          ),
+        },
+        child: Focus(
+          autofocus: true,
+          child: tiamat.Foundation(
       child: Stack(
         children: [
           Row(
@@ -137,7 +159,7 @@ class MainPageViewDesktop extends StatelessWidget {
           const BackgroundTaskViewContainer(),
         ],
       ),
-    );
+    ))));
   }
 
   static Widget currentUserPanel(MainPageState state, BuildContext context,
