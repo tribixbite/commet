@@ -196,6 +196,15 @@ class MatrixRoom extends Room {
   }
 
   @override
+  bool get isFavourite => _matrixRoom.isFavourite;
+
+  @override
+  Future<void> setFavourite(bool favourite) async {
+    await _matrixRoom.setFavourite(favourite);
+    _onUpdate.add(null);
+  }
+
+  @override
   Client get client => _client;
 
   @override

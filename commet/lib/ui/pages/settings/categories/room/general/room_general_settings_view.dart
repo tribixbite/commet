@@ -6,9 +6,15 @@ import 'package:flutter/material.dart' as material;
 
 class RoomGeneralSettingsView extends StatelessWidget {
   const RoomGeneralSettingsView(
-      {super.key, required this.pushRule, this.onPushRuleChanged});
+      {super.key,
+      required this.pushRule,
+      this.onPushRuleChanged,
+      this.isFavourite = false,
+      this.onToggleFavourite});
   final PushRule pushRule;
+  final bool isFavourite;
   final void Function(PushRule? rule)? onPushRuleChanged;
+  final void Function(bool)? onToggleFavourite;
 
   String get labelPushRuleNotifyAll => Intl.message("All Messages",
       desc: "Label for the push rule which notifies for all received messages",
@@ -28,11 +34,38 @@ class RoomGeneralSettingsView extends StatelessWidget {
       desc: "Label for the notifications section in room settings",
       name: "labelRoomSettingsNotifications");
 
+  String get labelFavourite => Intl.message("Favourite",
+      desc: "Label for the favourite toggle in room settings",
+      name: "labelFavourite");
+
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [notificationSettings()],
+      children: [
+        favouriteToggle(),
+        notificationSettings(),
+      ],
     );
+  }
+
+  Widget favouriteToggle() {
+    return tiamat.Panel(
+        mode: tiamat.TileType.surfaceContainerLow,
+        header: labelFavourite,
+        child: material.Material(
+          color: material.Colors.transparent,
+          child: material.SwitchListTile(
+            title: tiamat.Text.label(labelFavourite),
+            secondary: material.Icon(
+              isFavourite ? material.Icons.star : material.Icons.star_border,
+              color: isFavourite
+                  ? material.Colors.amber
+                  : null,
+            ),
+            value: isFavourite,
+            onChanged: onToggleFavourite,
+          ),
+        ));
   }
 
   Widget notificationSettings() {

@@ -98,10 +98,14 @@ class ChatView extends StatelessWidget {
       }
     }
 
+    // Restore any saved draft for this room
+    final draft = ChatState.peekDraft(state.room.localId);
+
     return ClipRRect(
       child: MessageInput(
         client: state.room.client,
         room: state.room,
+        initialText: draft,
         isRoomE2EE: state.room.isE2EE,
         focusKeyboard: state.onFocusMessageInput.stream,
         attachments: state.attachments,
@@ -120,7 +124,11 @@ class ChatView extends StatelessWidget {
           state.sendMessage(message, overrideClient: overrideClient);
           return MessageInputSendResult.success;
         },
-        onTextUpdated: state.onInputTextUpdated,
+        onTextUpdated: (text) {
+          state.onInputTextUpdated(text);
+          // Save draft as user types
+          ChatState.setDraft(state.room.localId, text);
+        },
         addAttachment: state.addAttachment,
         removeAttachment: state.removeAttachment,
         size: Layout.mobile ? 40 : 35,

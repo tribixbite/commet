@@ -150,6 +150,12 @@ abstract class Room {
 
   RoomVisibility get visibility;
 
+  /// Whether this room is marked as a favourite
+  bool get isFavourite;
+
+  /// Set the favourite status for this room
+  Future<void> setFavourite(bool favourite);
+
   /// Send a message in this room
   Future<TimelineEvent?> sendMessage({
     String? message,

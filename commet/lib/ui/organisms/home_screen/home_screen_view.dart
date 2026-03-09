@@ -16,8 +16,10 @@ class HomeScreenView extends StatelessWidget {
   final ClientManager clientManager;
   final List<Room>? rooms;
   final List<Room>? recentActivity;
+  final List<Room>? favourites;
   final List<Invitation>? invitations;
   final Function(Room room)? onRoomClicked;
+  final Function(Room room)? onToggleFavourite;
   final Future<void> Function(Invitation invite)? acceptInvite;
   final Future<void> Function(Invitation invite)? rejectInvite;
   final Future<void> Function(Client client, String address)? joinRoom;
@@ -28,7 +30,9 @@ class HomeScreenView extends StatelessWidget {
       required this.clientManager,
       this.rooms,
       this.recentActivity,
+      this.favourites,
       this.onRoomClicked,
+      this.onToggleFavourite,
       this.acceptInvite,
       this.rejectInvite,
       this.joinRoom,
@@ -49,6 +53,10 @@ class HomeScreenView extends StatelessWidget {
       name: "labelHomeInvitations",
       desc: "Short label for header of invitations list");
 
+  String get labelHomeFavourites => Intl.message("Favourites",
+      name: "labelHomeFavourites",
+      desc: "Short label for header of favourited rooms");
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -62,6 +70,11 @@ class HomeScreenView extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
             child: invitationsList(),
+          ),
+        if (favourites?.isNotEmpty == true)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+            child: favouriteRooms(),
           ),
         if (recentActivity?.isNotEmpty == true)
           Padding(
@@ -192,6 +205,43 @@ class HomeScreenView extends StatelessWidget {
               invitation,
               acceptInvitation: acceptInvite,
               rejectInvitation: rejectInvite,
+            );
+          },
+        ));
+  }
+
+  Widget favouriteRooms() {
+    return Panel(
+        mode: TileType.surfaceContainer,
+        header: labelHomeFavourites,
+        child: ImplicitlyAnimatedList(
+          shrinkWrap: true,
+          padding: EdgeInsetsGeometry.zero,
+          itemData: favourites!,
+          initialAnimation: false,
+          physics: const NeverScrollableScrollPhysics(),
+          itemBuilder: (context, room) {
+            return RoomPanel(
+              displayName: room.displayName,
+              avatar: room.avatar,
+              color: room.defaultColor,
+              body: room.lastEvent?.plainTextBody,
+              recentEventSender: room.lastEvent != null
+                  ? room
+                      .getMemberOrFallback(room.lastEvent!.senderId)
+                      .displayName
+                  : null,
+              recentEventSenderColor: room.lastEvent != null
+                  ? room.getColorOfUser(room.lastEvent!.senderId)
+                  : null,
+              onTap: () => onRoomClicked?.call(room),
+              showUserAvatar: clientManager.rooms
+                      .where((element) => element.identifier == room.identifier)
+                      .length >
+                  1,
+              userAvatar: room.client.self!.avatar,
+              userDisplayName: room.client.self!.displayName,
+              userColor: room.client.self!.defaultColor,
             );
           },
         ));

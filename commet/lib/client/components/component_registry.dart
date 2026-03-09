@@ -24,6 +24,7 @@ import 'package:commet/client/matrix/components/space_banner/matrix_space_banner
 import 'package:commet/client/matrix/components/space_color_scheme/matrix_space_color_scheme_component.dart';
 import 'package:commet/client/matrix/components/user_color/matrix_user_color_component.dart';
 import 'package:commet/client/matrix/components/user_presence/matrix_user_presence.dart';
+import 'package:commet/client/matrix/components/rtc_screen_share_annotation/matrix_rtc_screen_share_annotation_component.dart';
 import 'package:commet/client/matrix/components/voip/matrix_voip_component.dart';
 import 'package:commet/client/matrix/components/read_receipts/matrix_read_receipt_component.dart';
 import 'package:commet/client/matrix/components/threads/matrix_threads_component.dart';
@@ -47,6 +48,7 @@ class ComponentRegistry {
       MatrixCommandComponent(client),
 
       MatrixVoipComponent(client),
+      MatrixRtcScreenShareAnnotationComponent(client),
       MatrixUrlPreviewComponent(client),
       MatrixInvitationComponent(client),
       MatrixThreadsComponent(client),

@@ -203,7 +203,16 @@ class MatrixCommandComponent extends CommandComponent<MatrixClient> {
       return 'Usage: /roomnick <display name>';
     }
     final userId = client.getMatrixClient().userID!;
-    await args.room!.setMemberDisplayName(userId, args.msg);
+    // Set per-room display name via membership state event
+    await client.getMatrixClient().setRoomStateWithKey(
+      args.room!.id,
+      matrix.EventTypes.RoomMember,
+      userId,
+      {
+        'membership': 'join',
+        'displayname': args.msg,
+      },
+    );
     return null;
   }
 

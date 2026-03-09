@@ -21,7 +21,7 @@ import 'package:commet/debug/log.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import 'package:flutter/material.dart' show Icons, ValueKey, UniqueKey;
+import 'package:flutter/material.dart' show IconData, Icons, ValueKey, UniqueKey;
 import 'package:matrix_dart_sdk_drift_db/database.dart';
 import 'package:matrix/matrix.dart' as matrix;
 
@@ -397,6 +397,14 @@ class MatrixBackgroundRoom implements Room {
   @override
   Future<void> setVisibility(RoomVisibility visibility) {
     throw UnsupportedError('Background client does not support visibility changes');
+  }
+
+  @override
+  bool get isFavourite => false;
+
+  @override
+  Future<void> setFavourite(bool favourite) {
+    throw UnsupportedError('Background client does not support favourite changes');
   }
 }
 

@@ -1,8 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:commet/client/room.dart';
+import 'package:commet/client/timeline_events/timeline_event.dart';
 import 'package:commet/ui/atoms/code_block.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:commet/main.dart';
+import 'package:intl/intl.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
 
 class RoomDeveloperSettingsView extends StatelessWidget {
@@ -14,6 +20,7 @@ class RoomDeveloperSettingsView extends StatelessWidget {
     return Column(
         children: [
       roomIdentifiers(context),
+      exportChat(context),
       jsonDump(context),
       notificationTests(context),
     ].map<Widget>((e) {
@@ -65,6 +72,111 @@ class RoomDeveloperSettingsView extends StatelessWidget {
             subtitle: SelectableText(room.topic!),
           ),
       ],
+    );
+  }
+
+  Widget exportChat(BuildContext context) {
+    return ExpansionTile(
+      title: const tiamat.Text.labelEmphasised("Export Chat"),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      collapsedBackgroundColor:
+          Theme.of(context).colorScheme.surfaceContainerLow,
+      children: [
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          tiamat.Button(
+            text: "Export as Text",
+            onTap: () => _exportAsText(context),
+          ),
+          tiamat.Button(
+            text: "Export as JSON",
+            onTap: () => _exportAsJson(context),
+          ),
+          tiamat.Button(
+            text: "Copy to Clipboard",
+            onTap: () => _copyToClipboard(context),
+          ),
+        ]),
+      ],
+    );
+  }
+
+  /// Exports timeline events as plain text
+  void _exportAsText(BuildContext context) async {
+    final timeline = room.timeline;
+    if (timeline == null) return;
+
+    final buffer = StringBuffer();
+    buffer.writeln('=== ${room.displayName} ===');
+    buffer.writeln('Exported: ${DateTime.now().toIso8601String()}');
+    buffer.writeln('Room ID: ${room.identifier}');
+    buffer.writeln('');
+
+    final events = timeline.events.reversed.toList();
+    final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+
+    for (final event in events) {
+      final sender = room.getMemberOrFallback(event.senderId).displayName;
+      final time = dateFormat.format(event.originServerTs);
+      final body = event.plainTextBody;
+      buffer.writeln('[$time] $sender: $body');
+    }
+
+    final bytes = Uint8List.fromList(utf8.encode(buffer.toString()));
+    await FilePicker.platform.saveFile(
+      fileName: '${room.displayName}_export.txt',
+      bytes: bytes,
+    );
+  }
+
+  /// Exports timeline events as JSON
+  void _exportAsJson(BuildContext context) async {
+    final timeline = room.timeline;
+    if (timeline == null) return;
+
+    final events = timeline.events.reversed.map((event) {
+      return {
+        'event_id': event.eventId,
+        'sender': event.senderId,
+        'timestamp': event.originServerTs.toIso8601String(),
+        'body': event.plainTextBody,
+        'source': event.source,
+      };
+    }).toList();
+
+    final json = const JsonEncoder.withIndent('  ').convert({
+      'room_id': room.identifier,
+      'room_name': room.displayName,
+      'exported_at': DateTime.now().toIso8601String(),
+      'event_count': events.length,
+      'events': events,
+    });
+
+    final bytes = Uint8List.fromList(utf8.encode(json));
+    await FilePicker.platform.saveFile(
+      fileName: '${room.displayName}_export.json',
+      bytes: bytes,
+    );
+  }
+
+  /// Copies chat text to clipboard
+  void _copyToClipboard(BuildContext context) {
+    final timeline = room.timeline;
+    if (timeline == null) return;
+
+    final buffer = StringBuffer();
+    final events = timeline.events.reversed.toList();
+    final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+
+    for (final event in events) {
+      final sender = room.getMemberOrFallback(event.senderId).displayName;
+      final time = dateFormat.format(event.originServerTs);
+      final body = event.plainTextBody;
+      buffer.writeln('[$time] $sender: $body');
+    }
+
+    Clipboard.setData(ClipboardData(text: buffer.toString()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Chat exported to clipboard")),
     );
   }
 

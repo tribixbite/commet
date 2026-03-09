@@ -154,8 +154,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       recentActivity: _searchQuery.isEmpty
                           ? recentActivity
                           : _filterRooms(recentActivity),
+                      favourites: _getFavourites(),
                       onRoomClicked: (room) => EventBus.openRoom
                           .add((room.identifier, room.client.identifier)),
+                      onToggleFavourite: (room) async {
+                        await room.setFavourite(!room.isFavourite);
+                        setState(() {});
+                      },
                       joinRoom: joinRoom,
                       createRoom: createRoom,
                     ),
@@ -182,6 +187,13 @@ class _HomeScreenState extends State<HomeScreen> {
       filterClient = event;
       updateRecent();
     });
+  }
+
+  /// Returns rooms marked as favourite, filtered by search query
+  List<Room> _getFavourites() {
+    var allRooms = filterClient?.rooms ?? widget.clientManager.rooms;
+    var favs = allRooms.where((r) => r.isFavourite).toList();
+    return _filterRooms(favs);
   }
 
   /// Filters rooms by search query, matching display name or topic

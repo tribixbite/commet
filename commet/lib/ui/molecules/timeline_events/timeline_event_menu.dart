@@ -7,6 +7,7 @@ import 'package:commet/client/components/photo_album_room/photo_album_room_compo
 import 'package:commet/client/components/pinned_messages/pinned_messages_component.dart';
 import 'package:commet/client/components/push_notification/notification_content.dart';
 import 'package:commet/client/components/push_notification/notification_manager.dart';
+import 'package:commet/client/room.dart';
 import 'package:commet/client/timeline.dart';
 import 'package:commet/client/timeline_events/timeline_event.dart';
 import 'package:commet/client/timeline_events/timeline_event_emote.dart';

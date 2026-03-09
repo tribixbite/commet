@@ -45,6 +45,9 @@ enum EventInteractionType {
 }
 
 class ChatState extends State<Chat> {
+  /// In-memory draft storage keyed by room localId
+  static final Map<String, String> _drafts = {};
+
   Room get room => widget.room;
   Timeline? _timeline;
 
@@ -140,8 +143,38 @@ class ChatState extends State<Chat> {
     Log.i(
         "Disposing room timeline for: ${widget.room.displayName} ${widget.threadId ?? ""}");
 
+    // Save current input text as draft when leaving room
+    _saveDraft?.call();
+
     onFileDroppedSubscription?.cancel();
     super.dispose();
+  }
+
+  /// Callback set by MessageInput to save current text as a draft
+  Function()? _saveDraft;
+
+  /// Registers a save-draft callback from the message input widget
+  void registerDraftSaver(Function() saver) {
+    _saveDraft = saver;
+  }
+
+  /// Saves draft text for a room
+  static void setDraft(String roomLocalId, String text) {
+    if (text.isEmpty) {
+      _drafts.remove(roomLocalId);
+    } else {
+      _drafts[roomLocalId] = text;
+    }
+  }
+
+  /// Retrieves and clears the saved draft for a room
+  static String? consumeDraft(String roomLocalId) {
+    return _drafts.remove(roomLocalId);
+  }
+
+  /// Peeks at the saved draft without removing it
+  static String? peekDraft(String roomLocalId) {
+    return _drafts[roomLocalId];
   }
 
   @override

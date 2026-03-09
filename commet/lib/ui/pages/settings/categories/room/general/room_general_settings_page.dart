@@ -14,10 +14,12 @@ class RoomGeneralSettingsPage extends StatefulWidget {
 
 class _RoomGeneralSettingsPageState extends State<RoomGeneralSettingsPage> {
   late PushRule pushRule;
+  late bool isFavourite;
 
   @override
   void initState() {
     pushRule = widget.room.pushRule;
+    isFavourite = widget.room.isFavourite;
     super.initState();
   }
 
@@ -28,6 +30,13 @@ class _RoomGeneralSettingsPageState extends State<RoomGeneralSettingsPage> {
         RoomGeneralSettingsView(
           pushRule: pushRule,
           onPushRuleChanged: setPushRule,
+          isFavourite: isFavourite,
+          onToggleFavourite: (value) {
+            setState(() {
+              isFavourite = value;
+            });
+            widget.room.setFavourite(value);
+          },
         ),
         const SizedBox(
           height: 10,
