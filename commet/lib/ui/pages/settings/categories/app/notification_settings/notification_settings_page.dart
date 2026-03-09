@@ -84,6 +84,12 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           header: "Keyword Alerts",
           child: keywordAlertsSection(),
         ),
+        const SizedBox(height: 10),
+        Panel(
+          mode: tiamat.TileType.surfaceContainerLow,
+          header: "Auto-Responder",
+          child: autoResponderSection(),
+        ),
         if (preferences.developerMode.value)
           const Panel(
             mode: tiamat.TileType.surfaceContainerLow,
@@ -191,6 +197,49 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           isLoading: isPushGatewayLoading,
           onTap: onPushGatewaySelected,
         )
+      ],
+    );
+  }
+
+  late final TextEditingController _autoResponderController =
+      TextEditingController(
+    text: preferences.autoResponderMessage.value,
+  );
+
+  /// Auto-responder settings: enable/disable and configure away message
+  Widget autoResponderSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        BooleanPreferenceToggle(
+          preference: preferences.autoResponderEnabled,
+          title: "Enable Auto-Responder",
+          description:
+              "Automatically reply to direct messages when you are away",
+          onChanged: (_) => setState(() {}),
+        ),
+        AnimatedOpacity(
+          opacity: preferences.autoResponderEnabled.value ? 1 : 0.3,
+          duration: Durations.short4,
+          child: IgnorePointer(
+            ignoring: !preferences.autoResponderEnabled.value,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _autoResponderController,
+                decoration: const InputDecoration(
+                  hintText: "Your away message...",
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                minLines: 1,
+                onChanged: (value) {
+                  preferences.autoResponderMessage.set(value);
+                },
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

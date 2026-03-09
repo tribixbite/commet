@@ -504,4 +504,45 @@ class Preferences {
         .where((k) => k.isNotEmpty)
         .toList();
   }
+
+  // ---- Auto-Responder (away message) ----
+
+  /// Whether auto-responder is enabled
+  BoolPreference autoResponderEnabled =
+      BoolPreference("auto_responder_enabled", defaultValue: false);
+
+  /// Auto-responder message text
+  StringPreference autoResponderMessage = StringPreference(
+      "auto_responder_message",
+      defaultValue: "I'm currently away and will respond later.");
+
+  // ---- Message Templates (reusable snippets) ----
+
+  static const String _templatesKey = "message_templates";
+
+  /// Gets all saved message templates
+  /// Each: {"name": "...", "text": "...", "created": millis}
+  List<Map<String, dynamic>> getTemplates() {
+    final raw = _preferences?.getStringList(_templatesKey);
+    if (raw == null) return [];
+    return raw.map((s) => jsonDecode(s) as Map<String, dynamic>).toList();
+  }
+
+  /// Adds a new message template
+  Future<void> addTemplate(String name, String text) async {
+    final templates = _preferences?.getStringList(_templatesKey) ?? [];
+    templates.add(jsonEncode({
+      'name': name,
+      'text': text,
+      'created': DateTime.now().millisecondsSinceEpoch,
+    }));
+    await _preferences?.setStringList(_templatesKey, templates);
+  }
+
+  /// Removes a template by name
+  Future<void> removeTemplate(String name) async {
+    final templates = _preferences?.getStringList(_templatesKey) ?? [];
+    templates.removeWhere((s) => s.contains('"name":"$name"'));
+    await _preferences?.setStringList(_templatesKey, templates);
+  }
 }
