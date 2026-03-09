@@ -11,7 +11,7 @@ import 'package:commet/client/matrix_background/matrix_background_room.dart';
 import 'package:commet/client/room_preview.dart';
 import 'package:commet/debug/log.dart';
 import 'package:commet/utils/stored_stream_controller.dart';
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:matrix/matrix.dart' as matrix;
 import 'package:matrix_dart_sdk_drift_db/database.dart';
@@ -116,12 +116,12 @@ class MatrixBackgroundClient implements Client {
 
   @override
   Widget buildDebugInfo() {
-    throw UnimplementedError();
+    return const SizedBox.shrink();
   }
 
   @override
-  Future<void> close() {
-    throw UnimplementedError();
+  Future<void> close() async {
+    // Background client doesn't hold persistent connections
   }
 
   @override
@@ -155,7 +155,7 @@ class MatrixBackgroundClient implements Client {
 
   @override
   Iterable<Room> getEligibleRoomsForSpace(Space space) {
-    throw UnimplementedError();
+    return const []; // Background client doesn't compute space membership
   }
 
   @override
@@ -191,7 +191,8 @@ class MatrixBackgroundClient implements Client {
 
   @override
   bool hasPeer(String identifier) {
-    throw UnimplementedError();
+    // Background client doesn't track peers
+    return false;
   }
 
   @override
@@ -201,12 +202,28 @@ class MatrixBackgroundClient implements Client {
 
   @override
   bool hasSpace(String identifier) {
-    throw UnimplementedError();
+    // Check if the room exists and has space type
+    return allRooms.any((e) {
+      if (e.roomId != identifier) return false;
+      final preload =
+          preloadRoomStates.where((s) => s.roomId == identifier).toList();
+      for (var state in preload) {
+        try {
+          var decoded = jsonDecode(state.content);
+          if (decoded is Map &&
+              decoded['type'] == 'm.room.create' &&
+              decoded['content']?['type'] == 'm.space') {
+            return true;
+          }
+        } catch (_) {}
+      }
+      return false;
+    });
   }
 
   @override
   bool isLoggedIn() {
-    throw UnimplementedError();
+    return true; // Background client is only created for logged-in accounts
   }
 
   @override
@@ -220,7 +237,7 @@ class MatrixBackgroundClient implements Client {
   }
 
   @override
-  ValueKey get key => throw UnimplementedError();
+  ValueKey get key => ValueKey(identifier);
 
   @override
   Future<void> leaveRoom(Room room) {
@@ -253,7 +270,7 @@ class MatrixBackgroundClient implements Client {
   }
 
   @override
-  bool get supportsE2EE => throw UnimplementedError();
+  bool get supportsE2EE => false; // Background client doesn't handle E2EE
 
   @override
   Room? getRoomByAlias(String alias) {

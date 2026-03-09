@@ -372,6 +372,9 @@ class _RoomSidePanelState extends State<RoomSidePanel> {
                     _formatTimestamp(room.lastEventTimestamp)),
                 _infoRow(Icons.notifications, "Unread",
                     "${room.notificationCount}"),
+                if (room.timeline != null)
+                  _infoRow(Icons.message, "Loaded Messages",
+                      "${room.timeline!.events.length}"),
                 _infoRow(Icons.star, "Favourite",
                     room.isFavourite ? "Yes" : "No"),
                 _infoRow(Icons.security,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:commet/client/client.dart';
 import 'package:commet/client/client_manager.dart';
+import 'package:commet/client/components/direct_messages/direct_message_component.dart';
 import 'package:commet/config/layout_config.dart';
 import 'package:commet/main.dart';
 import 'package:commet/ui/atoms/room_header.dart';
@@ -32,7 +33,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-enum RoomFilter { all, unread, favourites }
+enum RoomFilter { all, unread, favourites, directMessages }
 
 class _HomeScreenState extends State<HomeScreen> {
   late List<Room> recentActivity;
@@ -168,6 +169,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _filterChip('Unread', RoomFilter.unread),
               const SizedBox(width: 6),
               _filterChip('Favourites', RoomFilter.favourites),
+              const SizedBox(width: 6),
+              _filterChip('DMs', RoomFilter.directMessages),
             ],
           ),
         ),
@@ -293,6 +296,12 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case RoomFilter.favourites:
         filtered = filtered.where((r) => r.isFavourite).toList();
+        break;
+      case RoomFilter.directMessages:
+        filtered = filtered.where((r) {
+          final dm = r.client.getComponent<DirectMessagesComponent>();
+          return dm?.isRoomDirectMessage(r) ?? false;
+        }).toList();
         break;
       case RoomFilter.all:
         break;

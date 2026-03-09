@@ -77,6 +77,13 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
   }
 
   Widget performance() {
+    // Gather client stats for the dashboard
+    final clients = clientManager?.clients ?? [];
+    final totalRooms =
+        clients.fold<int>(0, (sum, c) => sum + c.rooms.length);
+    final totalSpaces =
+        clients.fold<int>(0, (sum, c) => sum + c.spaces.length);
+
     return ExpansionTile(
         title: const tiamat.Text.labelEmphasised("Performance"),
         initiallyExpanded: false,
@@ -84,10 +91,46 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
         collapsedBackgroundColor:
             Theme.of(context).colorScheme.surfaceContainerLow,
         children: [
-          Diagnostics.general,
-          Diagnostics.initialLoadDatabaseDiagnostics,
-          Diagnostics.postLoadDatabaseDiagnostics,
-        ].map((e) => CumulativeDiagnosticsWidget(diagnostics: e)).toList());
+          // Client stats overview
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const tiamat.Text.labelEmphasised("Client Stats"),
+                const SizedBox(height: 4),
+                _statRow("Accounts", "${clients.length}"),
+                _statRow("Total Rooms", "$totalRooms"),
+                _statRow("Total Spaces", "$totalSpaces"),
+                _statRow("Build Mode",
+                    BuildConfig.RELEASE ? "Release" : "Debug"),
+              ],
+            ),
+          ),
+          ...([
+            Diagnostics.general,
+            Diagnostics.initialLoadDatabaseDiagnostics,
+            Diagnostics.postLoadDatabaseDiagnostics,
+          ].map((e) => CumulativeDiagnosticsWidget(diagnostics: e)).toList()),
+        ]);
+  }
+
+  Widget _statRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          tiamat.Text.labelLow(label),
+          Flexible(
+            child: Text(value,
+                style: const TextStyle(fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget rendering() {
