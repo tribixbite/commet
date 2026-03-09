@@ -607,4 +607,32 @@ class Preferences {
         .where((m) => (m['sendAt'] as int) <= now)
         .toList();
   }
+
+  // ---- Custom Slash Command Aliases ----
+
+  static const String _commandAliasesKey = "command_aliases";
+
+  /// Gets all custom command aliases
+  /// Each: {"alias": "/shortcut", "expansion": "/rainbow hello"}
+  List<Map<String, dynamic>> getCommandAliases() {
+    final raw = _preferences?.getStringList(_commandAliasesKey);
+    if (raw == null) return [];
+    return raw.map((s) => jsonDecode(s) as Map<String, dynamic>).toList();
+  }
+
+  /// Adds a custom command alias
+  Future<void> addCommandAlias(String alias, String expansion) async {
+    final items = _preferences?.getStringList(_commandAliasesKey) ?? [];
+    // Remove existing alias with same name
+    items.removeWhere((s) => s.contains('"alias":"$alias"'));
+    items.add(jsonEncode({'alias': alias, 'expansion': expansion}));
+    await _preferences?.setStringList(_commandAliasesKey, items);
+  }
+
+  /// Removes a custom command alias
+  Future<void> removeCommandAlias(String alias) async {
+    final items = _preferences?.getStringList(_commandAliasesKey) ?? [];
+    items.removeWhere((s) => s.contains('"alias":"$alias"'));
+    await _preferences?.setStringList(_commandAliasesKey, items);
+  }
 }

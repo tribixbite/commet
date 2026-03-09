@@ -21,6 +21,7 @@ import 'package:flutter/rendering.dart';
 import 'package:path/path.dart' as p;
 import 'package:tiamat/atoms/tile.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
+import 'package:http/http.dart' as http;
 import 'package:window_manager/window_manager.dart';
 
 class DeveloperSettingsPage extends StatefulWidget {
@@ -45,6 +46,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
       backgroundTasks(),
       dumpDatabases(),
       settingsBackup(),
+      apiExplorer(),
       tiamat.Panel(
         header: "Other Settings",
         mode: TileType.surfaceContainerLow,
@@ -491,4 +493,179 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
       ],
     );
   }
+
+  /// Basic Matrix CS API explorer for developer use
+  Widget apiExplorer() {
+    return ExpansionTile(
+      title: const tiamat.Text.labelEmphasised("API Explorer"),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      collapsedBackgroundColor:
+          Theme.of(context).colorScheme.surfaceContainerLow,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _ApiExplorerContent(),
+        ),
+      ],
+    );
+  }
 }
+
+/// Stateful widget for the API explorer form
+class _ApiExplorerContent extends StatefulWidget {
+  @override
+  State<_ApiExplorerContent> createState() => _ApiExplorerContentState();
+}
+
+class _ApiExplorerContentState extends State<_ApiExplorerContent> {
+  final _endpointController = TextEditingController(
+      text: "/_matrix/client/v3/account/whoami");
+  String _method = "GET";
+  String _result = "";
+  bool _loading = false;
+
+  /// Common Matrix CS API endpoints for quick selection
+  static const _quickEndpoints = [
+    ("whoami", "/_matrix/client/v3/account/whoami"),
+    ("versions", "/_matrix/client/versions"),
+    ("capabilities", "/_matrix/client/v3/capabilities"),
+    ("joined rooms", "/_matrix/client/v3/joined_rooms"),
+    ("profile", "/_matrix/client/v3/profile/{userId}"),
+    ("server info", "/_matrix/federation/v1/version"),
+  ];
+
+  @override
+  void dispose() {
+    _endpointController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Quick endpoint buttons
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: _quickEndpoints.map((e) {
+            return ActionChip(
+              label: Text(e.$1, style: const TextStyle(fontSize: 11)),
+              onPressed: () {
+                var endpoint = e.$2;
+                // Replace {userId} with actual user ID
+                final client = clientManager?.clients.firstOrNull;
+                if (client != null) {
+                  endpoint = endpoint.replaceAll(
+                      '{userId}', client.self?.identifier ?? '');
+                }
+                _endpointController.text = endpoint;
+                setState(() {});
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 8),
+        // Endpoint input
+        TextField(
+          controller: _endpointController,
+          style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+          decoration: InputDecoration(
+            labelText: "Endpoint",
+            isDense: true,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: "GET", label: Text("GET")),
+                ButtonSegment(value: "POST", label: Text("POST")),
+              ],
+              selected: {_method},
+              onSelectionChanged: (s) =>
+                  setState(() => _method = s.first),
+            ),
+            const SizedBox(width: 8),
+            tiamat.Button(
+              text: _loading ? "Loading..." : "Send",
+              onTap: _loading ? null : _sendRequest,
+            ),
+          ],
+        ),
+        if (_result.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(maxHeight: 300),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                _result,
+                style: const TextStyle(
+                    fontSize: 11, fontFamily: 'monospace'),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _sendRequest() async {
+    final client = clientManager?.clients.firstOrNull;
+    if (client == null) {
+      setState(() => _result = "Error: No client available");
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _result = "";
+    });
+
+    try {
+      final endpoint = _endpointController.text.trim();
+      // Access the Matrix SDK client to get homeserver and token
+      final dynamic matrixClient = (client as dynamic).matrixClient;
+      final homeserver = matrixClient.homeserver as Uri;
+      final token = matrixClient.accessToken as String?;
+
+      final uri = homeserver.replace(path: endpoint);
+      final headers = <String, String>{
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
+      final http.Response response;
+      if (_method == "GET") {
+        response = await http.get(uri, headers: headers);
+      } else {
+        response = await http.post(uri, headers: headers);
+      }
+
+      // Pretty-print JSON if possible
+      try {
+        final decoded = const JsonDecoder().convert(response.body);
+        _result =
+            const JsonEncoder.withIndent('  ').convert(decoded);
+      } catch (_) {
+        _result = response.body;
+      }
+    } catch (e) {
+      _result = "Error: $e";
+    }
+
+    setState(() => _loading = false);
+  }
+}
+

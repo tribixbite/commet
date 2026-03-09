@@ -6,6 +6,7 @@ import 'package:commet/client/components/emoticon_recent/recent_emoticon_compone
 import 'package:commet/client/components/profile/profile_component.dart';
 import 'package:commet/client/matrix/components/profile/matrix_profile_component.dart';
 import 'package:commet/client/matrix/matrix_client.dart';
+import 'package:commet/main.dart';
 import 'package:commet/client/matrix/matrix_room.dart';
 import 'package:commet/client/matrix/timeline_events/matrix_timeline_event.dart';
 import 'package:commet/client/room.dart';
@@ -40,12 +41,22 @@ class MatrixCommandComponent extends CommandComponent<MatrixClient> {
 
   @override
   List<String> getCommands() {
-    return client.getMatrixClient().commands.keys.toList();
+    final builtIn = client.getMatrixClient().commands.keys.toList();
+    // Append user-defined command aliases
+    final aliases = preferences.getCommandAliases();
+    for (final alias in aliases) {
+      final cmd = (alias['alias'] as String).replaceFirst('/', '');
+      if (!builtIn.contains(cmd)) builtIn.add(cmd);
+    }
+    return builtIn;
   }
 
   @override
   Future<void> executeCommand(String string, Room room,
       {TimelineEvent? interactingEvent, EventInteractionType? type}) async {
+    // Expand custom aliases before executing
+    var expanded = _expandAlias(string);
+
     var mxRoom = (room as MatrixRoom).matrixRoom;
     matrix.Event? event;
     if (interactingEvent != null) {
@@ -54,18 +65,37 @@ class MatrixCommandComponent extends CommandComponent<MatrixClient> {
 
     await client.getMatrixClient().parseAndRunCommand(
           mxRoom,
-          string,
+          expanded,
           inReplyTo: type == EventInteractionType.reply ? event : null,
           editEventId:
               type == EventInteractionType.edit ? event?.eventId : null,
         );
   }
 
+  /// Expands user-defined command aliases before execution
+  String _expandAlias(String input) {
+    if (!input.startsWith('/')) return input;
+    final parts = input.split(' ');
+    final cmd = parts[0]; // e.g. "/myalias"
+    final aliases = preferences.getCommandAliases();
+    for (final alias in aliases) {
+      if (alias['alias'] == cmd) {
+        final expansion = alias['expansion'] as String;
+        final args = parts.length > 1 ? ' ${parts.sublist(1).join(' ')}' : '';
+        return '$expansion$args';
+      }
+    }
+    return input;
+  }
+
   @override
   bool isExecutable(String string) {
     if (string.startsWith("/")) {
       var command = string.substring(1).split(" ").first;
-      return client.getMatrixClient().commands.containsKey(command);
+      if (client.getMatrixClient().commands.containsKey(command)) return true;
+      // Check custom aliases
+      final aliases = preferences.getCommandAliases();
+      return aliases.any((a) => a['alias'] == '/$command');
     }
 
     return false;
