@@ -1,8 +1,6 @@
 import 'package:commet/diagnostic/benchmark_values.dart';
 import 'package:commet/main.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
 

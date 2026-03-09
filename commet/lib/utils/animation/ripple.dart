@@ -145,7 +145,7 @@ class CirclePainter extends CustomPainter {
     if (wave != 0) {
       var opacity = (1 - ((wave - 1) / length!) - value).clamp(0.0, 1.0);
       opacity = opacity * opacity;
-      color = color.withOpacity(opacity);
+      color = color.withValues(alpha: opacity);
 
       r = minRadius! * (1 + (wave * value)) * value * scale;
       final Paint paint = Paint()..color = color;

@@ -1,6 +1,5 @@
 import 'package:commet/client/client.dart';
 import 'package:commet/client/matrix/matrix_client.dart';
-import 'package:commet/client/room.dart';
 import 'package:commet/client/room_preview.dart';
 import 'package:commet/client/space_child.dart';
 import 'package:matrix/matrix.dart' as matrix;

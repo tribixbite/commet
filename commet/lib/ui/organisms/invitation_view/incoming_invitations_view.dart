@@ -2,8 +2,6 @@ import 'package:commet/client/client_manager.dart';
 import 'package:commet/client/components/invitation/invitation_component.dart';
 import 'package:commet/ui/organisms/invitation_view/single_invitation_component_view.dart';
 import 'package:flutter/material.dart';
-// ignore: depend_on_referenced_packages
-import 'package:collection/collection.dart';
 
 class IncomingInvitationsWidget extends StatefulWidget {
   const IncomingInvitationsWidget(this.manager, {super.key});
@@ -20,7 +18,7 @@ class _IncomingInvitationsWidgetState extends State<IncomingInvitationsWidget> {
   Widget build(BuildContext context) {
     var components = widget.manager.clients
         .map((element) => element.getComponent<InvitationComponent>())
-        .whereNotNull();
+        .nonNulls;
 
     if (components.isEmpty) {
       return Container();
