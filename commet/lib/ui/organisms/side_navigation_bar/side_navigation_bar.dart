@@ -8,6 +8,7 @@ import 'package:commet/ui/molecules/space_selector.dart';
 import 'package:commet/ui/organisms/side_navigation_bar/side_navigation_bar_direct_messages.dart';
 import 'package:commet/ui/navigation/navigation_utils.dart';
 import 'package:commet/ui/organisms/global_search/global_search_widget.dart';
+import 'package:commet/ui/organisms/public_room_directory/public_room_directory.dart';
 import 'package:commet/ui/pages/get_or_create_room/get_or_create_room.dart';
 import 'package:commet/utils/common_strings.dart';
 import 'package:commet/utils/event_bus.dart';
@@ -174,6 +175,17 @@ class _SideNavigationBarState extends State<SideNavigationBar> {
                           onTap: () {
                             NavigationUtils.navigateTo(
                                 context, const GlobalSearchWidget());
+                          },
+                        ),
+                        context),
+                    SideNavigationBar.tooltip(
+                        "Public Rooms",
+                        ImageButton(
+                          size: 70,
+                          icon: Icons.explore,
+                          onTap: () {
+                            NavigationUtils.navigateTo(
+                                context, const PublicRoomDirectory());
                           },
                         ),
                         context),

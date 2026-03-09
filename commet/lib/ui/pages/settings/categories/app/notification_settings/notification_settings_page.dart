@@ -81,6 +81,12 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         const SizedBox(height: 10),
         Panel(
           mode: tiamat.TileType.surfaceContainerLow,
+          header: "Notification Sound",
+          child: notificationSoundSection(),
+        ),
+        const SizedBox(height: 10),
+        Panel(
+          mode: tiamat.TileType.surfaceContainerLow,
           header: "Keyword Alerts",
           child: keywordAlertsSection(),
         ),
@@ -97,6 +103,50 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             child: NotifierDebugView(),
           ),
       ],
+    );
+  }
+
+  /// Notification sound preference section
+  Widget notificationSoundSection() {
+    final currentSound =
+        preferences.notificationSound.value ?? "default";
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: tiamat.Text.labelLow(
+            "Choose the notification sound for incoming messages.",
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _soundChip("Default", "default", currentSound),
+              _soundChip("Gentle", "gentle", currentSound),
+              _soundChip("Chime", "chime", currentSound),
+              _soundChip("Pop", "pop", currentSound),
+              _soundChip("Silent", "silent", currentSound),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _soundChip(String label, String value, String current) {
+    final isSelected = current == value;
+    return ChoiceChip(
+      label: tiamat.Text.label(label),
+      selected: isSelected,
+      onSelected: (_) {
+        setState(() {
+          preferences.notificationSound.set(value);
+        });
+      },
     );
   }
 

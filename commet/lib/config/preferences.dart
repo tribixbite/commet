@@ -452,6 +452,10 @@ class Preferences {
   StringPreference notificationKeywords =
       StringPreference("notification_keywords", defaultValue: "");
 
+  /// Selected notification sound preset (default, gentle, chime, pop, silent)
+  StringPreference notificationSound =
+      StringPreference("notification_sound", defaultValue: "default");
+
   // ---- Message Reminders (snooze for later) ----
 
   static const String _remindersKey = "message_reminders";

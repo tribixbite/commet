@@ -42,7 +42,7 @@ extension MatrixExtensions on Client {
 
     var visibility = switch (joinRule) {
       "public" => commet.RoomVisibilityPublic(),
-      "knock" => commet.RoomVisibilityPrivate(),
+      "knock" => commet.RoomVisibilityKnock(),
       "invite" => commet.RoomVisibilityPrivate(),
       "private" => commet.RoomVisibilityPrivate(),
       "restricted" => commet.RoomVisibilityRestricted([]),

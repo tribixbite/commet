@@ -56,6 +56,8 @@ class _RoomSecuritySettingsPageState extends State<RoomSecuritySettingsPage> {
         if (widget.room.client.supportsE2EE && widget.showEncryptionToggle)
           buildE2EEToggle(),
         buildRoomVisibility(),
+        // Room version upgrade for Matrix rooms with admin permissions
+        if (widget.room is MatrixRoom) _roomUpgradeSection(),
         // Server ACL management for Matrix rooms with admin permissions
         if (widget.room is MatrixRoom) _serverAclSection(),
       ],
@@ -92,6 +94,147 @@ class _RoomSecuritySettingsPageState extends State<RoomSecuritySettingsPage> {
                 },
               ),
             )
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Room version upgrade section - allows admins to upgrade room version
+  Widget _roomUpgradeSection() {
+    final matrixRoom = (widget.room as MatrixRoom).matrixRoom;
+    final currentVersion = matrixRoom.getState(matrix.EventTypes.RoomCreate)
+            ?.content['room_version']
+            ?.toString() ??
+        "1";
+    final canUpgrade = widget.room.permissions.canChangeVisibility;
+
+    return tiamat.Panel(
+      mode: tiamat.TileType.surfaceContainerLow,
+      header: "Room Version",
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 16),
+                const SizedBox(width: 6),
+                Text("Current version: $currentVersion",
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: tiamat.Text.labelLow(
+              "Upgrading creates a new room and sends users a redirect. "
+              "This action cannot be undone.",
+            ),
+          ),
+          if (canUpgrade)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              child: OutlinedButton.icon(
+                onPressed: () => _showUpgradeDialog(matrixRoom, currentVersion),
+                icon: const Icon(Icons.upgrade, size: 16),
+                label: const Text("Upgrade Room",
+                    style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  minimumSize: const Size(0, 32),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: tiamat.Text.labelLow("Admin permissions required."),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showUpgradeDialog(
+      matrix.Room matrixRoom, String currentVersion) {
+    // Available room versions (v1-v11)
+    final versions = ["11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1"]
+        .where((v) => int.parse(v) > int.parse(currentVersion))
+        .toList();
+
+    if (versions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Room is already at latest version")),
+      );
+      return;
+    }
+
+    String selectedVersion = versions.first;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text("Upgrade Room"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                  "This will create a new room and redirect all users. "
+                  "Are you sure?",
+                  style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 12),
+              DropdownButton<String>(
+                value: selectedVersion,
+                isExpanded: true,
+                items: versions
+                    .map((v) => DropdownMenuItem(
+                          value: v,
+                          child: Text("Version $v"),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) {
+                    setDialogState(() {
+                      selectedVersion = v;
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Cancel")),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  final newRoomId = await matrixRoom.client
+                      .upgradeRoom(matrixRoom.id, selectedVersion);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content:
+                              Text("Room upgraded to v$selectedVersion")),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Upgrade failed: $e")),
+                    );
+                  }
+                }
+              },
+              child: const Text("Upgrade"),
+            ),
           ],
         ),
       ),
