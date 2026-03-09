@@ -557,6 +557,23 @@ class MatrixRoom extends Room {
     return null;
   }
 
+  @override
+  Future<void> sendPollVote(String pollEventId, String optionId) async {
+    await _matrixRoom.sendEvent({
+      'm.relates_to': {
+        'rel_type': 'm.reference',
+        'event_id': pollEventId,
+      },
+      'm.poll.response': {
+        'answers': [optionId],
+      },
+      // Fallback for older implementations
+      'org.matrix.msc3381.poll.response': {
+        'answers': [optionId],
+      },
+    }, type: 'm.poll.response');
+  }
+
   TimelineEvent convertEvent(matrix.Event event, {matrix.Timeline? timeline}) {
     var c = client as MatrixClient;
     try {

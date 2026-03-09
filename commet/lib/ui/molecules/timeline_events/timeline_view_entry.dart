@@ -421,7 +421,8 @@ class TimelineViewEntryState extends State<TimelineViewEntry>
           key: eventKey,
           event: event,
           room: widget.timeline.room,
-          // TODO: wire up vote submission via room.sendEvent
+          onVote: (optionId) =>
+              widget.timeline.room.sendPollVote(event.eventId, optionId),
         );
       }
     }

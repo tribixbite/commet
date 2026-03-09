@@ -106,10 +106,18 @@ class _RoomGeneralSettingsPageState extends State<RoomGeneralSettingsPage> {
         setState(() {
           _retentionLabel = label;
         });
-        // TODO: Send m.room.retention state event when protocol support is stable
-        // This would require: room.client.sendStateEvent(
-        //   room.identifier, 'm.room.retention',
-        //   {'max_lifetime': duration?.inMilliseconds}, '')
+        // Send m.room.retention state event (MSC1763)
+        if (widget.room is MatrixRoom) {
+          final mxRoom = (widget.room as MatrixRoom).matrixRoom;
+          mxRoom.client.setRoomStateWithKey(
+            mxRoom.id, 'm.room.retention', '',
+            {
+              if (duration != null)
+                'max_lifetime': duration.inMilliseconds,
+            },
+          );
+        }
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(duration == null

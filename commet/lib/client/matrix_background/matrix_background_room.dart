@@ -313,6 +313,11 @@ class MatrixBackgroundRoom implements Room {
   }
 
   @override
+  Future<void> sendPollVote(String pollEventId, String optionId) {
+    throw UnsupportedError('Background client does not support sending');
+  }
+
+  @override
   Future<void> setDisplayName(String newName) {
     throw UnsupportedError('Background client does not support room modifications');
   }

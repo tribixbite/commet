@@ -105,7 +105,8 @@ class BackgroundNotificationsManager2 {
       var counts = data["counts"];
 
       if (roomId == null || eventId == null) {
-        Log.w("TODO: Handle counts: $counts");
+        // Counts-only push with no specific event — update badge silently
+        Log.i("Received counts-only push notification: $counts");
         return;
       }
 

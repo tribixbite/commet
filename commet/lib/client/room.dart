@@ -188,6 +188,9 @@ abstract class Room {
   /// Remove an emoticon reaction to a message
   Future<void> removeReaction(TimelineEvent reactingTo, Emoticon reaction);
 
+  /// Send a poll vote response (MSC3381 m.poll.response)
+  Future<void> sendPollVote(String pollEventId, String optionId);
+
   /// Processes files before sending as attachment
   Future<List<ProcessedAttachment>> processAttachments(
     List<PendingFileAttachment> attachments,

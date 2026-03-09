@@ -66,8 +66,10 @@ class MatrixDonationAwardsComponent
   }
 
   bool validateSecret(String secret) {
-    // TODO: Reimplement validation
-    return true;
+    // Validate that the secret is a valid hex-encoded 128-bit AES key (32 hex chars)
+    if (secret.length != 32) return false;
+    final hexPattern = RegExp(r'^[0-9a-fA-F]+$');
+    return hexPattern.hasMatch(secret);
   }
 
   Future<String> getEncryptedUsernameHash(String secret) async {
