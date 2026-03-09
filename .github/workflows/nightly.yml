@@ -64,6 +64,7 @@ jobs:
           sed -i '/aapt2FromMavenOverride/d' gradle.properties
 
       # Build per-ABI split APKs (arm64-v8a, armeabi-v7a, x86_64)
+      # Uses --debug because nightly builds don't have signing keys.
       # ORG_GRADLE_PROJECT_SPLIT_ABI disables ndk abiFilters in build.gradle
       # so --split-per-abi doesn't conflict with them.
       - name: Build Split APKs
@@ -73,9 +74,9 @@ jobs:
           cd $PROJECT_PATH
           flutter build apk \
             --split-per-abi \
-            --release \
+            --debug \
             --dart-define PLATFORM=android \
-            --dart-define BUILD_MODE=release \
+            --dart-define BUILD_MODE=debug \
             --dart-define GIT_HASH=${{ github.sha }} \
             --dart-define VERSION_TAG=nightly \
             --dart-define BUILD_DATE=$(date +%s)000 \
@@ -85,9 +86,9 @@ jobs:
       - name: Rename APKs
         run: |
           cd $PROJECT_PATH/build/app/outputs/flutter-apk
-          mv app-arm64-v8a-release.apk commet-arm64-v8a.apk
-          mv app-armeabi-v7a-release.apk commet-armeabi-v7a.apk
-          mv app-x86_64-release.apk commet-x86_64.apk
+          mv app-arm64-v8a-debug.apk commet-arm64-v8a.apk
+          mv app-armeabi-v7a-debug.apk commet-armeabi-v7a.apk
+          mv app-x86_64-debug.apk commet-x86_64.apk
 
       # Upload all three APKs as build artifacts (always available)
       - name: Upload Artifacts
@@ -120,8 +121,8 @@ jobs:
             | `armeabi-v7a` | Older 32-bit ARM devices |
             | `x86_64` | x86 emulators and ChromeOS |
 
-            > These are unsigned debug-key builds from the latest commit.
-            > For signed release builds, see the [latest release](../../releases/latest).
+            > These are debug builds from the latest commit on `main`.
+            > For signed release builds, see the [latest stable release](../../releases/latest).
           prerelease: true
           make_latest: false
           files: |
