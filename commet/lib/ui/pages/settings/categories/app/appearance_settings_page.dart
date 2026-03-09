@@ -106,6 +106,28 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
           height: 10,
         ),
         Panel(
+          header: "Message Layout",
+          mode: TileType.surfaceContainerLow,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+            child: Column(
+              children: [
+                _layoutStyleSelector(),
+                const Seperator(),
+                _fontFamilySelector(),
+                const Seperator(),
+                BooleanPreferenceToggle(
+                  preference: preferences.compactMode,
+                  title: "Compact Mode",
+                  description:
+                      "Reduce padding and avatar sizes for a denser message layout",
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Panel(
           header: "Other Options",
           mode: TileType.surfaceContainerLow,
           child: Padding(
@@ -129,16 +151,61 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
                   title: labelUseRoomAvatarPlaceholders,
                   description: labelUseRoomAvatarPlaceholdersDescription,
                 ),
-                const Seperator(),
-                BooleanPreferenceToggle(
-                  preference: preferences.compactMode,
-                  title: "Compact Mode",
-                  description:
-                      "Reduce padding and avatar sizes for a denser message layout",
-                ),
               ],
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  /// Message layout style selector (Default / Bubble / IRC)
+  Widget _layoutStyleSelector() {
+    final current = preferences.messageLayoutStyle.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        tiamat.Text.labelEmphasised("Message Style"),
+        const SizedBox(height: 4),
+        tiamat.Text.labelLow("Choose how messages are displayed in the timeline"),
+        const SizedBox(height: 8),
+        m.SegmentedButton<String>(
+          segments: const [
+            m.ButtonSegment(value: "default", label: m.Text("Default")),
+            m.ButtonSegment(value: "bubble", label: m.Text("Bubble")),
+            m.ButtonSegment(value: "irc", label: m.Text("IRC")),
+          ],
+          selected: {current},
+          onSelectionChanged: (selection) {
+            preferences.messageLayoutStyle.set(selection.first);
+            setState(() {});
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Font family selector for message text
+  Widget _fontFamilySelector() {
+    final current = preferences.fontFamily.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        tiamat.Text.labelEmphasised("Message Font"),
+        const SizedBox(height: 4),
+        tiamat.Text.labelLow("Choose the font used for message text"),
+        const SizedBox(height: 8),
+        m.SegmentedButton<String>(
+          segments: const [
+            m.ButtonSegment(value: "RobotoCustom", label: m.Text("Roboto")),
+            m.ButtonSegment(value: "NunitoSans", label: m.Text("Nunito")),
+            m.ButtonSegment(value: "Code", label: m.Text("Mono")),
+          ],
+          selected: {current},
+          onSelectionChanged: (selection) {
+            preferences.fontFamily.set(selection.first);
+            setState(() {});
+          },
         ),
       ],
     );

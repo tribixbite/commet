@@ -352,6 +352,15 @@ class Preferences {
 
   StringPreference theme = StringPreference("app_theme", defaultValue: "dark");
 
+  /// Message layout style: "default" (avatar+name left), "bubble" (chat bubbles), "irc" (compact inline)
+  StringPreference messageLayoutStyle =
+      StringPreference("message_layout_style", defaultValue: "default");
+
+  /// Font family preference for message body text
+  /// Options: "RobotoCustom" (default), "NunitoSans", "Code" (monospace)
+  StringPreference fontFamily =
+      StringPreference("font_family", defaultValue: "RobotoCustom");
+
   NullableBoolPreference unifiedPushEnabled =
       NullableBoolPreference("unified_push_enabled", defaultValue: null);
 

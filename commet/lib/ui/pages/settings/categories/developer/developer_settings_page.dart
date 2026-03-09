@@ -383,7 +383,6 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
           tiamat.Button(
             text: "Export Settings",
             onTap: () async {
-              final prefs = preferences;
               // Access the SharedPreferences instance via the Preference static
               final sp = Preference.preferences;
               if (sp == null) return;
