@@ -52,6 +52,7 @@ class _MatrixHtmlStateState extends State<MatrixHtmlState> {
   static final CodeHtmlExtension _code = CodeHtmlExtension();
   static final LineBreakHtmlExtension _lineBreak = LineBreakHtmlExtension();
   static final ColorHtmlExtension _color = ColorHtmlExtension();
+  static final MathHtmlExtension _math = MathHtmlExtension();
   static const Set<String> allowedHtmlTags = {
     'body',
     'html',
@@ -122,6 +123,7 @@ class _MatrixHtmlStateState extends State<MatrixHtmlState> {
         spoiler,
         _codeBlock,
         _code,
+        _math,
         linkify,
         _lineBreak,
         imageExtension,
@@ -543,6 +545,108 @@ class ColorHtmlExtension extends HtmlExtension {
   bool matches(ExtensionContext context) {
     return context.attributes.containsKey("data-mx-color") ||
         context.attributes.containsKey("color");
+  }
+
+  @override
+  Set<String> get supportedTags => {};
+}
+
+/// Renders LaTeX/math expressions in a styled monospace block.
+/// Detects inline $...$ and display $$...$$ delimiters.
+class MathHtmlExtension extends HtmlExtension {
+  @override
+  InlineSpan build(ExtensionContext context) {
+    var text = context.node.text ?? '';
+    var theme = Theme.of(context.buildContext!);
+    var mathColor = theme.colorScheme.tertiary;
+
+    // Check for display math ($$...$$)
+    if (text.contains('\$\$')) {
+      var parts = <InlineSpan>[];
+      var remaining = text;
+      while (remaining.contains('\$\$')) {
+        var start = remaining.indexOf('\$\$');
+        if (start > 0) {
+          parts.add(TextSpan(text: remaining.substring(0, start)));
+        }
+        remaining = remaining.substring(start + 2);
+        var end = remaining.indexOf('\$\$');
+        if (end == -1) {
+          // No closing delimiter, treat as text
+          parts.add(TextSpan(text: '\$\$$remaining'));
+          remaining = '';
+          break;
+        }
+        var formula = remaining.substring(0, end);
+        parts.add(WidgetSpan(
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: mathColor.withAlpha(20),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: mathColor.withAlpha(60)),
+            ),
+            child: SelectableText(
+              formula,
+              style: TextStyle(
+                fontFamily: 'Code',
+                color: mathColor,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ));
+        remaining = remaining.substring(end + 2);
+      }
+      if (remaining.isNotEmpty) {
+        parts.add(TextSpan(text: remaining));
+      }
+      return TextSpan(children: parts);
+    }
+
+    // Check for inline math ($...$)
+    if (text.contains('\$')) {
+      var parts = <InlineSpan>[];
+      var remaining = text;
+      while (remaining.contains('\$')) {
+        var start = remaining.indexOf('\$');
+        if (start > 0) {
+          parts.add(TextSpan(text: remaining.substring(0, start)));
+        }
+        remaining = remaining.substring(start + 1);
+        var end = remaining.indexOf('\$');
+        if (end == -1) {
+          parts.add(TextSpan(text: '\$$remaining'));
+          remaining = '';
+          break;
+        }
+        var formula = remaining.substring(0, end);
+        parts.add(TextSpan(
+          text: formula,
+          style: TextStyle(
+            fontFamily: 'Code',
+            color: mathColor,
+            backgroundColor: mathColor.withAlpha(20),
+          ),
+        ));
+        remaining = remaining.substring(end + 1);
+      }
+      if (remaining.isNotEmpty) {
+        parts.add(TextSpan(text: remaining));
+      }
+      return TextSpan(children: parts);
+    }
+
+    return TextSpan(text: text);
+  }
+
+  @override
+  bool matches(ExtensionContext context) {
+    if (context.node is! dom.Text) return false;
+    var text = context.node.text ?? '';
+    // Match text containing $ delimiters (but not currency like $100)
+    return RegExp(r'\$[^$\s][^$]*\$').hasMatch(text);
   }
 
   @override

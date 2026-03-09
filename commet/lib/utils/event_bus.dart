@@ -57,6 +57,9 @@ class EventBus {
 
   static StreamController<void> openRoomInfo = StreamController.broadcast();
 
+  static StreamController<void> openGlobalSearch =
+      StreamController.broadcast();
+
   static StreamController<MessageEffectParticles> doMessageEffect =
       StreamController.broadcast();
 

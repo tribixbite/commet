@@ -198,6 +198,25 @@ class MatrixRoom extends Room {
   @override
   bool get isFavourite => _matrixRoom.isFavourite;
 
+  /// Check if the room has been upgraded (tombstoned)
+  /// Returns the replacement room ID if the room has a tombstone, null otherwise
+  String? get tombstoneReplacementRoomId {
+    final tombstone = _matrixRoom.getState(matrix.EventTypes.RoomTombstone);
+    if (tombstone != null) {
+      return tombstone.content['replacement_room'] as String?;
+    }
+    return null;
+  }
+
+  /// Get the tombstone body message (reason for upgrade)
+  String? get tombstoneBody {
+    final tombstone = _matrixRoom.getState(matrix.EventTypes.RoomTombstone);
+    if (tombstone != null) {
+      return tombstone.content['body'] as String?;
+    }
+    return null;
+  }
+
   @override
   Future<void> setFavourite(bool favourite) async {
     await _matrixRoom.setFavourite(favourite);

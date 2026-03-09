@@ -14,6 +14,8 @@ class ReadIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (users.isEmpty) return const SizedBox();
+
     var diff = users.length - maxItems;
     return Material(
       color: Colors.transparent,
@@ -23,7 +25,7 @@ class ReadIndicator extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             InkWell(
-              onTap: onTap,
+              onTap: onTap ?? () => _showReadReceiptDetails(context),
               child: Stack(
                 children: [
                   for (int i = 0; i < users.length && i < maxItems; i++)
@@ -50,6 +52,68 @@ class ReadIndicator extends StatelessWidget {
           image: member.avatar,
           placeholderColor: member.defaultColor,
           placeholderText: member.displayName,
+        ),
+      ),
+    );
+  }
+
+  /// Shows a popup with detailed read receipt info (who read, display names)
+  void _showReadReceiptDetails(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                "Read by ${users.length} user${users.length == 1 ? '' : 's'}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.4,
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  final member = room.getMemberOrFallback(users[index]);
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: tiamat.Avatar(
+                      radius: 18,
+                      image: member.avatar,
+                      placeholderColor: member.defaultColor,
+                      placeholderText: member.displayName,
+                    ),
+                    title: Text(
+                      member.displayName,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      users[index],
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withAlpha(128),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

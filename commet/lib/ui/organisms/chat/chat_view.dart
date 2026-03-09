@@ -1,5 +1,6 @@
 import 'package:commet/client/components/account_switch_prefix/account_switch_prefix.dart';
 import 'package:commet/client/components/push_notification/notification_manager.dart';
+import 'package:commet/client/matrix/matrix_room.dart';
 import 'package:commet/client/room.dart';
 import 'package:commet/client/timeline_events/timeline_event.dart';
 import 'package:commet/client/timeline_events/timeline_event_message.dart';
@@ -45,6 +46,10 @@ class ChatView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
+      // Show tombstone banner if room has been upgraded
+      if (state.room is MatrixRoom &&
+          (state.room as MatrixRoom).tombstoneReplacementRoomId != null)
+        _tombstoneBanner(context),
       Expanded(
           child: Stack(
         fit: StackFit.expand,
@@ -52,6 +57,54 @@ class ChatView extends StatelessWidget {
       )),
       input(),
     ]);
+  }
+
+  /// Banner shown when a room has been upgraded/tombstoned
+  Widget _tombstoneBanner(BuildContext context) {
+    final matrixRoom = state.room as MatrixRoom;
+    final body =
+        matrixRoom.tombstoneBody ?? "This room has been upgraded.";
+    final replacementId = matrixRoom.tombstoneReplacementRoomId!;
+
+    return Material(
+      color: Theme.of(context).colorScheme.tertiaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Icon(Icons.upgrade,
+                size: 20,
+                color: Theme.of(context).colorScheme.onTertiaryContainer),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                body,
+                style: TextStyle(
+                  color:
+                      Theme.of(context).colorScheme.onTertiaryContainer,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                EventBus.openRoom.add(
+                    (replacementId, state.room.client.identifier));
+              },
+              child: Text(
+                "Go to new room",
+                style: TextStyle(
+                  color:
+                      Theme.of(context).colorScheme.onTertiaryContainer,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget timeline() {
