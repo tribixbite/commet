@@ -387,7 +387,7 @@ class TimelineEventMenu {
 
 void _showForwardDialog(
     BuildContext context, TimelineEvent event, Timeline timeline) {
-  var rooms = timeline.client.rooms
+  var allRooms = timeline.client.rooms
       .where((r) => r.permissions.canSendMessage)
       .toList();
 
@@ -395,41 +395,110 @@ void _showForwardDialog(
     context,
     title: "Forward to...",
     builder: (dialogContext) {
-      return SizedBox(
-        width: 400,
-        height: 500,
-        child: ListView.builder(
-          itemCount: rooms.length,
-          itemBuilder: (context, index) {
-            var room = rooms[index];
-            return ListTile(
-              leading: room.avatar != null
-                  ? CircleAvatar(backgroundImage: room.avatar)
-                  : CircleAvatar(
-                      backgroundColor: room.defaultColor,
-                      child: Text(
-                        room.displayName.isNotEmpty
-                            ? room.displayName[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-              title: Text(room.displayName),
-              onTap: () async {
-                if (event is TimelineEventMessage) {
-                  await room.sendMessage(message: event.plainTextBody);
-                }
-
-                if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop();
-                }
-              },
-            );
-          },
-        ),
+      return _ForwardDialogContent(
+        allRooms: allRooms,
+        event: event,
+        dialogContext: dialogContext,
       );
     },
   );
+}
+
+/// Stateful forward dialog with search filtering
+class _ForwardDialogContent extends StatefulWidget {
+  final List<Room> allRooms;
+  final TimelineEvent event;
+  final BuildContext dialogContext;
+
+  const _ForwardDialogContent({
+    required this.allRooms,
+    required this.event,
+    required this.dialogContext,
+  });
+
+  @override
+  State<_ForwardDialogContent> createState() => _ForwardDialogContentState();
+}
+
+class _ForwardDialogContentState extends State<_ForwardDialogContent> {
+  String _search = '';
+  bool _sending = false;
+
+  List<Room> get filteredRooms {
+    if (_search.isEmpty) return widget.allRooms;
+    final q = _search.toLowerCase();
+    return widget.allRooms
+        .where((r) => r.displayName.toLowerCase().contains(q))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rooms = filteredRooms;
+    return SizedBox(
+      width: 400,
+      height: 500,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search rooms...',
+                prefixIcon: Icon(Icons.search, size: 20),
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) => setState(() => _search = v),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: rooms.length,
+              itemBuilder: (context, index) {
+                var room = rooms[index];
+                return ListTile(
+                  leading: room.avatar != null
+                      ? CircleAvatar(backgroundImage: room.avatar)
+                      : CircleAvatar(
+                          backgroundColor: room.defaultColor,
+                          child: Text(
+                            room.displayName.isNotEmpty
+                                ? room.displayName[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                  title: Text(room.displayName),
+                  enabled: !_sending,
+                  onTap: () async {
+                    setState(() => _sending = true);
+                    try {
+                      if (widget.event is TimelineEventMessage) {
+                        await room.sendMessage(
+                            message: (widget.event as TimelineEventMessage)
+                                .plainTextBody);
+                      } else if (widget.event is TimelineEventSticker) {
+                        // Forward sticker as text fallback with name
+                        final name = (widget.event as TimelineEventSticker)
+                            .stickerName;
+                        await room.sendMessage(
+                            message: name.isNotEmpty ? name : '[sticker]');
+                      }
+                    } finally {
+                      if (widget.dialogContext.mounted) {
+                        Navigator.of(widget.dialogContext).pop();
+                      }
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class TimelineEventMenuEntry {
