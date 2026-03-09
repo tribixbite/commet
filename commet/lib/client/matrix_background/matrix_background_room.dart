@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:commet/client/attachment.dart';
@@ -21,7 +20,7 @@ import 'package:commet/debug/log.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import 'package:flutter/material.dart' show IconData, Icons, ValueKey, UniqueKey;
+import 'package:flutter/material.dart' show IconData, Icons, ValueKey;
 import 'package:matrix_dart_sdk_drift_db/database.dart';
 import 'package:matrix/matrix.dart' as matrix;
 

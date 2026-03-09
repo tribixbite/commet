@@ -108,8 +108,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   /// Notification sound preference section
   Widget notificationSoundSection() {
-    final currentSound =
-        preferences.notificationSound.value ?? "default";
+    final currentSound = preferences.notificationSound.value;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

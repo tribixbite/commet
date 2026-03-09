@@ -567,7 +567,7 @@ void _showReminderPicker(
                 }
 
                 final preview = event is TimelineEventMessage
-                    ? (event as TimelineEventMessage).plainTextBody
+                    ? event.plainTextBody
                     : "[message]";
 
                 await preferences.addReminder(

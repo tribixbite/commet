@@ -256,7 +256,6 @@ class _MatrixCrossSigningViewState extends State<MatrixCrossSigningView> {
       case BootstrapState.done:
         return done(context);
     }
-    return tiamat.Text.label(widget.state.toString());
   }
 
   Widget askSetupCrossSigning() {

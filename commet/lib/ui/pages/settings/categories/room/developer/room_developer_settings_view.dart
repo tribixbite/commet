@@ -1,8 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:commet/client/room.dart';
-import 'package:commet/client/timeline_events/timeline_event.dart';
 import 'package:commet/ui/atoms/code_block.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';

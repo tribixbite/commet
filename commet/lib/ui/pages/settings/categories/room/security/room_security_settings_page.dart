@@ -4,7 +4,6 @@ import 'package:commet/ui/navigation/adaptive_dialog.dart';
 import 'package:commet/ui/pages/get_or_create_room/room_creator.dart';
 import 'package:commet/utils/error_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:matrix/matrix.dart' as matrix;
 import 'package:tiamat/atoms/tile.dart';

@@ -248,16 +248,17 @@ class _PublicRoomDirectoryState extends State<PublicRoomDirectory> {
       }
     }
     if (mc == null) return;
+    final client = mc;
 
     try {
-      await mc.joinRoom(room.roomId);
+      await client.joinRoom(room.roomId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Joined ${room.name ?? room.roomId}")),
         );
         setState(() {}); // Refresh joined state
         // Navigate to the room
-        EventBus.openRoom.add((room.roomId, mc!.identifier));
+        EventBus.openRoom.add((room.roomId, client.identifier));
       }
     } catch (e) {
       if (mounted) {

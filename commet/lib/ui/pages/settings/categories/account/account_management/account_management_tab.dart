@@ -101,7 +101,9 @@ class _AccountManagementSettingsTabState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   accountListBuilder(context, clientManager),
-                  addAccountButton(context)
+                  addAccountButton(context),
+                  if (clientManager.clients.length > 1)
+                    _logoutAllButton(clientManager),
                 ],
               ),
             ),
@@ -209,6 +211,45 @@ class _AccountManagementSettingsTabState
     }
 
     component.setClientPrefix(newPrefix);
+  }
+
+  /// Quick logout of all accounts (panic button)
+  Widget _logoutAllButton(ClientManager cm) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: tiamat.Button.danger(
+        text: "Logout All Accounts",
+        onTap: () async {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const tiamat.Text.labelEmphasised(
+                  "Logout All Accounts?"),
+              content: const tiamat.Text.label(
+                  "This will sign you out of all accounts immediately. "
+                  "You will need to log in again to use the app."),
+              actions: [
+                tiamat.TextButton(
+                  "Cancel",
+                  onTap: () => Navigator.of(ctx).pop(false),
+                ),
+                tiamat.Button.danger(
+                  text: "Logout All",
+                  onTap: () => Navigator.of(ctx).pop(true),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true) {
+            // Log out all clients in reverse order to avoid index shifting
+            final clients = List.of(cm.clients);
+            for (final client in clients.reversed) {
+              await cm.logoutClient(client);
+            }
+          }
+        },
+      ),
+    );
   }
 
   Padding addAccountButton(BuildContext context) {
