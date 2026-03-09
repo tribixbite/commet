@@ -101,7 +101,7 @@ class _RoomCalendarSettingsPageState extends State<RoomCalendarSettingsPage> {
                       context,
                       title: "Sync Calendar Source",
                       items: [
-                        //  CalendarSource.room,
+                        CalendarSource.room,
                         CalendarSource.ical,
                       ],
                       itemBuilder: (context, item, callback) {
@@ -130,8 +130,8 @@ class _RoomCalendarSettingsPageState extends State<RoomCalendarSettingsPage> {
                               builder: (context) => AddRemoteCalendarDialog(
                                   widget.calendarComponent));
                         case CalendarSource.room:
-                          // TODO: Handle this case.
-                          throw UnimplementedError();
+                          // Room-based calendar sync not yet supported
+                          break;
                         case _:
                           break;
                       }

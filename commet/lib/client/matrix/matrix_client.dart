@@ -610,15 +610,12 @@ class MatrixClient extends Client {
         bytes: bytes, name: "avatar", mimeType: mimeType));
 
     await _updateOwnProfile();
-    // TODO: Handle refresh avatar
-    // await (self as MatrixPeer).refreshAvatar();
   }
 
   @override
   Future<void> setDisplayName(String name) async {
     await _matrixClient.setDisplayName(_matrixClient.userID!, name);
-    // TODO: Handle display name update
-    // self!.displayName = name;
+    await _updateOwnProfile();
   }
 
   @override

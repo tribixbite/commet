@@ -119,16 +119,13 @@ class UpdateChecker {
             await client.close();
           }
 
-          Process.run(
+          await Process.run(
               installerPath,
               [
                 "--command",
                 "update",
               ],
               runInShell: true);
-
-          // TODO: not this
-          await Future.delayed(Duration(seconds: 1));
         });
 
         exit(0);

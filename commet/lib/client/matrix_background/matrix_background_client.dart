@@ -255,14 +255,29 @@ class MatrixBackgroundClient implements Client {
   bool get supportsE2EE => throw UnimplementedError();
 
   @override
-  Room? getRoomByAlias(String identifier) {
-    // TODO: implement getRoomByAlias
-    throw UnimplementedError();
+  Room? getRoomByAlias(String alias) {
+    // Search preloaded room state for a room with matching alias
+    for (var room in allRooms) {
+      var preload =
+          preloadRoomStates.where((e) => e.roomId == room.roomId).toList();
+      for (var state in preload) {
+        try {
+          var decoded = jsonDecode(state.content);
+          if (decoded is Map &&
+              decoded['type'] == 'm.room.canonical_alias' &&
+              decoded['content']?['alias'] == alias) {
+            return getRoom(room.roomId);
+          }
+        } catch (_) {}
+      }
+    }
+    return null;
   }
 
   @override
-  Future<Room> joinRoomFromPreview(RoomPreview preview) {
-    // TODO: implement joinRoomFromPreview
-    throw UnimplementedError();
+  Future<Room> joinRoomFromPreview(RoomPreview preview) async {
+    // Background client cannot join rooms - this operation requires the full client
+    throw UnsupportedError(
+        'Background client does not support joining rooms. Use the foreground client.');
   }
 }

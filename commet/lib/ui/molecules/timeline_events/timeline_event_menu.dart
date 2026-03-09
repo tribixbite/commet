@@ -320,6 +320,27 @@ class TimelineEventMenu {
                 text: (event as TimelineEventMessage).plainTextBody,
               ));
             }),
+      if (event is TimelineEventMessage || event is TimelineEventSticker)
+        TimelineEventMenuEntry(
+          name: "Forward",
+          icon: Icons.forward,
+          action: (BuildContext context) {
+            _showForwardDialog(context, event, timeline);
+            onActionFinished?.call();
+          },
+        ),
+      if (event is TimelineEventMessage)
+        TimelineEventMenuEntry(
+          name: "Permalink",
+          icon: Icons.link,
+          action: (BuildContext context) {
+            final roomId = timeline.room.identifier;
+            final eventId = event.eventId;
+            final permalink = 'https://matrix.to/#/$roomId/$eventId';
+            Clipboard.setData(ClipboardData(text: permalink));
+            onActionFinished?.call();
+          },
+        ),
       TimelineEventMenuEntry(
         name: promptShowSource,
         icon: Icons.code,
@@ -362,6 +383,53 @@ class TimelineEventMenu {
         ),
     ];
   }
+}
+
+void _showForwardDialog(
+    BuildContext context, TimelineEvent event, Timeline timeline) {
+  var rooms = timeline.client.rooms
+      .where((r) => r.permissions.canSendMessage)
+      .toList();
+
+  AdaptiveDialog.show(
+    context,
+    title: "Forward to...",
+    builder: (dialogContext) {
+      return SizedBox(
+        width: 400,
+        height: 500,
+        child: ListView.builder(
+          itemCount: rooms.length,
+          itemBuilder: (context, index) {
+            var room = rooms[index];
+            return ListTile(
+              leading: room.avatar != null
+                  ? CircleAvatar(backgroundImage: room.avatar)
+                  : CircleAvatar(
+                      backgroundColor: room.defaultColor,
+                      child: Text(
+                        room.displayName.isNotEmpty
+                            ? room.displayName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+              title: Text(room.displayName),
+              onTap: () async {
+                if (event is TimelineEventMessage) {
+                  await room.sendMessage(message: event.plainTextBody);
+                }
+
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
+            );
+          },
+        ),
+      );
+    },
+  );
 }
 
 class TimelineEventMenuEntry {

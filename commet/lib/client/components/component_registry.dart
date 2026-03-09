@@ -47,8 +47,6 @@ class ComponentRegistry {
       MatrixCommandComponent(client),
 
       MatrixVoipComponent(client),
-      // MatrixRTCDataChannelComponent(client),
-      // MatrixRtcScreenShareAnnotationComponent(client),
       MatrixUrlPreviewComponent(client),
       MatrixInvitationComponent(client),
       MatrixThreadsComponent(client),

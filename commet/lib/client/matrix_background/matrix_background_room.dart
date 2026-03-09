@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 
@@ -13,16 +14,20 @@ import 'package:commet/client/matrix_background/matrix_background_events.dart';
 import 'package:commet/client/matrix_background/matrix_background_member.dart';
 import 'package:commet/client/member.dart';
 import 'package:commet/client/permissions.dart';
+import 'package:commet/client/matrix/matrix_role.dart';
 import 'package:commet/client/role.dart';
 import 'package:commet/client/timeline_events/timeline_event.dart';
 import 'package:commet/debug/log.dart';
 import 'package:drift/drift.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/painting/image_provider.dart';
-import 'package:flutter/src/widgets/icon_data.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter/material.dart' show Icons, ValueKey, UniqueKey;
 import 'package:matrix_dart_sdk_drift_db/database.dart';
 import 'package:matrix/matrix.dart' as matrix;
 
+/// Background-context room implementation. Many operations are not available
+/// in the background service context and will return safe defaults or throw
+/// UnsupportedError for operations that require the full foreground client.
 class MatrixBackgroundRoom implements Room {
   MatrixBackgroundClient backgroundClient;
   RoomDataData data;
@@ -85,7 +90,7 @@ class MatrixBackgroundRoom implements Room {
   @override
   Future<TimelineEvent<Client>?> addReaction(
       TimelineEvent<Client> reactingTo, Emoticon reaction) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support reactions');
   }
 
   @override
@@ -93,35 +98,35 @@ class MatrixBackgroundRoom implements Room {
 
   @override
   Future<void> cancelSend(TimelineEvent<Client> event) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support sending');
   }
 
   @override
   Client get client => backgroundClient;
 
   @override
-  Future<void> close() {
-    throw UnimplementedError();
+  Future<void> close() async {
+    // No resources to release in background context
   }
 
   @override
   Color get defaultColor => getColorOfUser(identifier);
 
   @override
-  String get developerInfo => throw UnimplementedError();
+  String get developerInfo => 'Background room: $roomId';
 
   @override
-  int get displayHighlightedNotificationCount => throw UnimplementedError();
+  int get displayHighlightedNotificationCount => highlightedNotificationCount;
 
   @override
   String displayName = "";
 
   @override
-  int get displayNotificationCount => throw UnimplementedError();
+  int get displayNotificationCount => notificationCount;
 
   @override
   Future<void> enableE2EE() {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support enabling E2EE');
   }
 
   @override
@@ -142,13 +147,14 @@ class MatrixBackgroundRoom implements Room {
   }
 
   @override
-  Future<List<Member>> fetchMembersList({bool cache = false}) {
-    throw UnimplementedError();
+  Future<List<Member>> fetchMembersList({bool cache = false}) async {
+    // Background client has limited member list access
+    return [];
   }
 
   @override
   List<T> getAllComponents<T extends RoomComponent<Client, Room>>() {
-    throw UnimplementedError();
+    return [];
   }
 
   @override
@@ -158,7 +164,7 @@ class MatrixBackgroundRoom implements Room {
 
   @override
   T? getComponent<T extends RoomComponent<Client, Room>>() {
-    throw UnimplementedError();
+    return null;
   }
 
   @override
@@ -179,12 +185,12 @@ class MatrixBackgroundRoom implements Room {
 
   @override
   Member getMemberOrFallback(String id) {
-    throw UnimplementedError();
+    return MatrixBackgroundMember(id);
   }
 
   @override
   Role getMemberRole(String identifier) {
-    throw UnimplementedError();
+    return MatrixRole(0);
   }
 
   @override
@@ -194,21 +200,28 @@ class MatrixBackgroundRoom implements Room {
 
   @override
   Future<Timeline> getTimeline({String? contextEventId}) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support timeline loading');
   }
 
   @override
-  int get highlightedNotificationCount => throw UnimplementedError();
+  int get highlightedNotificationCount {
+    try {
+      var content = jsonDecode(data.content);
+      return (content['highlight_count'] as int?) ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
 
   @override
-  IconData get icon => throw UnimplementedError();
+  IconData get icon => Icons.tag;
 
   @override
   String get identifier => roomId;
 
   @override
   List<(Member, Role)> importantMembers() {
-    throw UnimplementedError();
+    return [];
   }
 
   @override
@@ -216,54 +229,78 @@ class MatrixBackgroundRoom implements Room {
       _stateEvents.any((e) => e.type == matrix.EventTypes.Encryption);
 
   @override
-  bool get isMembersListComplete => throw UnimplementedError();
+  bool get isMembersListComplete => false;
 
   @override
-  Key get key => throw UnimplementedError();
+  Key get key => ValueKey(localId);
 
   @override
-  TimelineEvent<Client>? get lastEvent => throw UnimplementedError();
+  TimelineEvent<Client>? get lastEvent => null;
 
   @override
-  DateTime get lastEventTimestamp => throw UnimplementedError();
-
-  @override
-  String get localId => throw UnimplementedError();
-
-  @override
-  Iterable<String> get memberIds => throw UnimplementedError();
-
-  @override
-  List<Member> membersList() {
-    throw UnimplementedError();
+  DateTime get lastEventTimestamp {
+    try {
+      var content = jsonDecode(data.content);
+      var ts = content['last_event_ts'];
+      if (ts is int) return DateTime.fromMillisecondsSinceEpoch(ts);
+    } catch (_) {}
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   @override
-  int get notificationCount => throw UnimplementedError();
+  String get localId => '${client.identifier}:$identifier';
 
   @override
-  Stream<void> get onUpdate => throw UnimplementedError();
+  Iterable<String> get memberIds {
+    // Return member IDs from preloaded state if available
+    var memberEvents = _stateEvents
+        .where((e) => e.type == matrix.EventTypes.RoomMember)
+        .map((e) => e.content['state_key'] as String?)
+        .whereType<String>();
+    return memberEvents;
+  }
 
   @override
-  Permissions get permissions => throw UnimplementedError();
+  List<Member> membersList() {
+    return [];
+  }
+
+  @override
+  int get notificationCount {
+    try {
+      var content = jsonDecode(data.content);
+      return (content['notification_count'] as int?) ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  final StreamController<void> _onUpdate = StreamController.broadcast();
+
+  @override
+  Stream<void> get onUpdate => _onUpdate.stream;
+
+  @override
+  Permissions get permissions => _BackgroundPermissions();
 
   @override
   Future<List<ProcessedAttachment>> processAttachments(
       List<PendingFileAttachment> attachments) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support attachments');
   }
 
-  PushRule get pushRule => throw UnimplementedError();
+  @override
+  PushRule get pushRule => PushRule.notify;
 
   @override
   Future<void> removeReaction(
       TimelineEvent<Client> reactingTo, Emoticon reaction) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support reactions');
   }
 
   @override
   Future<void> retrySend(TimelineEvent<Client> event) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support sending');
   }
 
   @override
@@ -272,91 +309,141 @@ class MatrixBackgroundRoom implements Room {
       TimelineEvent<Client>? inReplyTo,
       TimelineEvent<Client>? replaceEvent,
       List<ProcessedAttachment>? processedAttachments}) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support sending');
   }
 
   @override
   Future<void> setDisplayName(String newName) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support room modifications');
   }
 
   @override
   Future<void> setPushRule(PushRule rule) {
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support push rule changes');
   }
 
   @override
   bool shouldNotify(TimelineEvent<Client> event) {
-    throw UnimplementedError();
+    // In background context, always notify for safety
+    return pushRule != PushRule.dontNotify;
   }
 
   @override
-  bool get shouldPreviewMedia => throw UnimplementedError();
+  bool get shouldPreviewMedia => true;
 
   @override
-  Timeline? get timeline => throw UnimplementedError();
+  Timeline? get timeline => null;
 
   @override
   Member? getMember(String id) {
-    // TODO: implement getMember
-    throw UnimplementedError();
+    return null;
   }
 
   @override
-  // TODO: implement isSpecialRoomType
   bool get isSpecialRoomType => false;
 
   @override
   Future<void> banUser(String id) {
-    // TODO: implement banUser
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support moderation');
   }
 
   @override
   Future<void> kickUser(String id) {
-    // TODO: implement kickUser
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support moderation');
   }
 
   @override
-  // TODO: implement availableRoles
-  List<Role> get availableRoles => throw UnimplementedError();
+  List<Role> get availableRoles => [];
 
   @override
   Future<void> setMemberRole(String id, Role role) {
-    // TODO: implement setMemberRole
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support role changes');
   }
 
   @override
-  // TODO: implement topic
-  String? get topic => throw UnimplementedError();
+  String? get topic {
+    var event = _stateEvents
+        .firstWhereOrNull((e) => e.type == matrix.EventTypes.RoomTopic);
+    return event?.content['topic'] as String?;
+  }
 
   @override
   Future<void> setTopic(String topic) {
-    // TODO: implement setTopic
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support topic changes');
   }
 
   @override
   Future<void> setRoomAvatar(Uint8List bytes, String? mimeType) {
-    // TODO: implement setRoomAvatar
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support avatar changes');
   }
 
   @override
-  Future<void> markAsRead() {
-    // TODO: implement markAsRead
-    throw UnimplementedError();
+  Future<void> markAsRead() async {
+    // Background client cannot mark as read - requires foreground client
   }
 
   @override
-  // TODO: implement visibility
-  RoomVisibility get visibility => throw UnimplementedError();
+  RoomVisibility get visibility {
+    var joinRules = _stateEvents
+        .firstWhereOrNull((e) => e.type == matrix.EventTypes.RoomJoinRules);
+    var rule = joinRules?.content['join_rule'] as String?;
+    return switch (rule) {
+      'public' => RoomVisibilityPublic(),
+      'restricted' => RoomVisibilityRestricted([]),
+      _ => RoomVisibilityPrivate(),
+    };
+  }
 
   @override
   Future<void> setVisibility(RoomVisibility visibility) {
-    // TODO: implement setVisibility
-    throw UnimplementedError();
+    throw UnsupportedError('Background client does not support visibility changes');
   }
+}
+
+/// Read-only permissions for background context
+class _BackgroundPermissions extends Permissions {
+  @override
+  bool get canSendMessage => false;
+
+  @override
+  bool get canEditName => false;
+
+  @override
+  bool get canEditAvatar => false;
+
+  @override
+  bool get canEditTopic => false;
+
+  @override
+  bool get canEnableE2EE => false;
+
+  @override
+  bool get canBan => false;
+
+  @override
+  bool get canKick => false;
+
+  @override
+  bool get canChangeRoles => false;
+
+  @override
+  bool get canUserEditMessages => false;
+
+  @override
+  bool get canDeleteOtherUserMessages => false;
+
+  @override
+  bool get canEditRoomEmoticons => false;
+
+  @override
+  bool get canEditChildren => false;
+
+  @override
+  bool get canInviteUser => false;
+
+  @override
+  bool get canChangeVisibility => false;
+
+  @override
+  bool get canChangeNotificationSettings => false;
 }
