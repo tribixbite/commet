@@ -452,6 +452,48 @@ class Preferences {
   StringPreference notificationKeywords =
       StringPreference("notification_keywords", defaultValue: "");
 
+  // ---- Message Reminders (snooze for later) ----
+
+  static const String _remindersKey = "message_reminders";
+
+  /// Gets all pending reminders as a list of maps
+  /// Each: {"room_id": "...", "event_id": "...", "preview": "...", "remind_at": millis}
+  List<Map<String, dynamic>> getReminders() {
+    final raw = _preferences?.getStringList(_remindersKey);
+    if (raw == null) return [];
+    return raw.map((s) => jsonDecode(s) as Map<String, dynamic>).toList();
+  }
+
+  /// Adds a message reminder for a future time
+  Future<void> addReminder(
+      String roomId, String eventId, String preview, DateTime remindAt) async {
+    final reminders = _preferences?.getStringList(_remindersKey) ?? [];
+    // Don't duplicate
+    if (reminders.any((s) => s.contains(eventId))) return;
+    reminders.add(jsonEncode({
+      'room_id': roomId,
+      'event_id': eventId,
+      'preview': preview,
+      'remind_at': remindAt.millisecondsSinceEpoch,
+    }));
+    await _preferences?.setStringList(_remindersKey, reminders);
+  }
+
+  /// Removes a reminder by event ID
+  Future<void> removeReminder(String eventId) async {
+    final reminders = _preferences?.getStringList(_remindersKey) ?? [];
+    reminders.removeWhere((s) => s.contains(eventId));
+    await _preferences?.setStringList(_remindersKey, reminders);
+  }
+
+  /// Gets reminders that are due (remind_at <= now)
+  List<Map<String, dynamic>> getDueReminders() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return getReminders()
+        .where((r) => (r['remind_at'] as int) <= now)
+        .toList();
+  }
+
   /// Returns parsed keyword list for notification matching
   List<String> get notificationKeywordList {
     final raw = notificationKeywords.value;

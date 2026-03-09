@@ -364,6 +364,16 @@ class TimelineEventMenu {
             onActionFinished?.call();
           },
         ),
+      // Remind me later — snooze a message for a future notification
+      if (event is TimelineEventMessage)
+        TimelineEventMenuEntry(
+          name: "Remind Me",
+          icon: Icons.alarm_add,
+          action: (BuildContext context) {
+            _showReminderPicker(context, event, timeline);
+            onActionFinished?.call();
+          },
+        ),
       TimelineEventMenuEntry(
         name: promptShowSource,
         icon: Icons.code,
@@ -522,6 +532,64 @@ class _ForwardDialogContentState extends State<_ForwardDialogContent> {
       ),
     );
   }
+}
+
+/// Shows a reminder time picker dialog
+void _showReminderPicker(
+    BuildContext context, TimelineEvent event, Timeline timeline) {
+  final options = [
+    ("In 15 minutes", const Duration(minutes: 15)),
+    ("In 1 hour", const Duration(hours: 1)),
+    ("In 3 hours", const Duration(hours: 3)),
+    ("Tomorrow morning", null), // special case
+  ];
+
+  AdaptiveDialog.show(
+    context,
+    title: "Remind Me",
+    builder: (dialogContext) {
+      return SizedBox(
+        width: 300,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: options.map((option) {
+            return ListTile(
+              leading: const Icon(Icons.alarm),
+              title: Text(option.$1),
+              onTap: () async {
+                DateTime remindAt;
+                if (option.$2 != null) {
+                  remindAt = DateTime.now().add(option.$2!);
+                } else {
+                  // Tomorrow at 9 AM
+                  final now = DateTime.now();
+                  remindAt = DateTime(now.year, now.month, now.day + 1, 9);
+                }
+
+                final preview = event is TimelineEventMessage
+                    ? (event as TimelineEventMessage).plainTextBody
+                    : "[message]";
+
+                await preferences.addReminder(
+                  timeline.room.identifier,
+                  event.eventId,
+                  preview,
+                  remindAt,
+                );
+
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(content: Text("Reminder set for ${option.$1}")),
+                  );
+                }
+              },
+            );
+          }).toList(),
+        ),
+      );
+    },
+  );
 }
 
 class TimelineEventMenuEntry {

@@ -21,6 +21,7 @@ class RoomDeveloperSettingsView extends StatelessWidget {
         children: [
       roomIdentifiers(context),
       exportChat(context),
+      stateEventInspector(context),
       jsonDump(context),
       notificationTests(context),
     ].map<Widget>((e) {
@@ -177,6 +178,81 @@ class RoomDeveloperSettingsView extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: buffer.toString()));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Chat exported to clipboard")),
+    );
+  }
+
+  /// Interactive state event inspector — browse state events by type
+  Widget stateEventInspector(BuildContext context) {
+    // Parse the developer info JSON into a browsable structure
+    Map<String, dynamic> states;
+    try {
+      states = jsonDecode(room.developerInfo) as Map<String, dynamic>;
+    } catch (_) {
+      states = {};
+    }
+
+    final sortedTypes = states.keys.toList()..sort();
+
+    return ExpansionTile(
+      title: const tiamat.Text.labelEmphasised("State Inspector"),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      collapsedBackgroundColor:
+          Theme.of(context).colorScheme.surfaceContainerLow,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: tiamat.Text.labelLow(
+            "${sortedTypes.length} state event types",
+          ),
+        ),
+        ...sortedTypes.map((type) {
+          final stateKeys = states[type] as Map<String, dynamic>? ?? {};
+          final keyCount = stateKeys.length;
+          return ExpansionTile(
+            title: Text(type, style: const TextStyle(fontSize: 13)),
+            subtitle: Text("$keyCount key${keyCount == 1 ? '' : 's'}",
+                style: const TextStyle(fontSize: 11)),
+            children: stateKeys.entries.map((entry) {
+              final stateKey = entry.key;
+              final content = const JsonEncoder.withIndent('  ')
+                  .convert(entry.value);
+              return ExpansionTile(
+                title: Text(
+                  stateKey.isEmpty ? "(empty key)" : stateKey,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SelectionArea(
+                            child: Codeblock(
+                              language: "json",
+                              text: content,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy, size: 16),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: content));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text("Copied $type state event")),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          );
+        }),
+      ],
     );
   }
 
