@@ -128,7 +128,14 @@ class _AppearanceSettingsPageState extends State<AppearanceSettingsPage> {
                   preference: preferences.usePlaceholderRoomAvatars,
                   title: labelUseRoomAvatarPlaceholders,
                   description: labelUseRoomAvatarPlaceholdersDescription,
-                )
+                ),
+                const Seperator(),
+                BooleanPreferenceToggle(
+                  preference: preferences.compactMode,
+                  title: "Compact Mode",
+                  description:
+                      "Reduce padding and avatar sizes for a denser message layout",
+                ),
               ],
             ),
           ),

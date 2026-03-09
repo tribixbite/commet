@@ -32,11 +32,14 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+enum RoomFilter { all, unread, favourites }
+
 class _HomeScreenState extends State<HomeScreen> {
   late List<Room> recentActivity;
 
   Client? filterClient;
   String _searchQuery = '';
+  RoomFilter _roomFilter = RoomFilter.all;
 
   late List<StreamSubscription> subscriptions;
 
@@ -138,6 +141,18 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              _filterChip('All', RoomFilter.all),
+              const SizedBox(width: 6),
+              _filterChip('Unread', RoomFilter.unread),
+              const SizedBox(width: 6),
+              _filterChip('Favourites', RoomFilter.favourites),
+            ],
+          ),
+        ),
         Flexible(
           child: ListView(
             padding: const EdgeInsets.all(0),
@@ -193,11 +208,46 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Room> _getFavourites() {
     var allRooms = filterClient?.rooms ?? widget.clientManager.rooms;
     var favs = allRooms.where((r) => r.isFavourite).toList();
-    return _filterRooms(favs);
+    return _filterBySearch(favs);
+  }
+
+  Widget _filterChip(String label, RoomFilter filter) {
+    final selected = _roomFilter == filter;
+    return FilterChip(
+      label: Text(label, style: TextStyle(fontSize: 12)),
+      selected: selected,
+      onSelected: (_) {
+        setState(() {
+          _roomFilter = filter;
+        });
+      },
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
   }
 
   /// Filters rooms by search query, matching display name or topic
   List<Room> _filterRooms(List<Room> rooms) {
+    var filtered = _filterBySearch(rooms);
+
+    // Apply category filter
+    switch (_roomFilter) {
+      case RoomFilter.unread:
+        filtered =
+            filtered.where((r) => r.displayNotificationCount > 0).toList();
+        break;
+      case RoomFilter.favourites:
+        filtered = filtered.where((r) => r.isFavourite).toList();
+        break;
+      case RoomFilter.all:
+        break;
+    }
+
+    return filtered;
+  }
+
+  /// Filters rooms by text search query only
+  List<Room> _filterBySearch(List<Room> rooms) {
     if (_searchQuery.isEmpty) return rooms;
     return rooms
         .where((r) =>

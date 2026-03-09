@@ -1,4 +1,5 @@
 import 'package:commet/diagnostic/benchmark_values.dart';
+import 'package:commet/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -51,8 +52,13 @@ class TimelineEventLayoutMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     BenchmarkValues.numTimelineMessageBodyBuilt += 1;
+    final compact = preferences.compactMode.value;
+    final hPad = compact ? 8.0 : 16.0;
+    final vPad = compact ? 0.0 : 2.0;
+    final avatarGap = compact ? 6.0 : 12.0;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 2, 8, 2),
+      padding: EdgeInsets.fromLTRB(hPad, vPad, compact ? 4.0 : 8.0, vPad),
       child: Column(
         children: [
           if (inResponseTo != null) inResponseTo!,
@@ -62,7 +68,7 @@ class TimelineEventLayoutMessage extends StatelessWidget {
               avatar(),
               Flexible(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 0, 0),
+                  padding: EdgeInsets.fromLTRB(avatarGap, 0, 0, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [

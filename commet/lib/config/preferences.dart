@@ -304,6 +304,10 @@ class Preferences {
   BoolPreference hideRoomSidePanel =
       BoolPreference("hide_room_side_panel", defaultValue: false);
 
+  /// Compact mode reduces padding and avatar sizes for denser message display
+  BoolPreference compactMode =
+      BoolPreference("compact_mode", defaultValue: false);
+
   BoolPreference showRoomPreviewsInSpaceSidebar =
       BoolPreference("show_room_previews_in_space_sidebar", defaultValue: true);
 
@@ -377,6 +381,24 @@ class Preferences {
 
   NullableStringPreference lastDownloadLocation =
       NullableStringPreference("last_download_location", defaultValue: null);
+
+  // ---- User Notes (private annotations about other users) ----
+
+  static const String _userNotesPrefix = "user_note_";
+
+  /// Gets the private note for a user by their Matrix ID
+  String? getUserNote(String userId) {
+    return _preferences?.getString(_userNotesPrefix + userId);
+  }
+
+  /// Sets a private note for a user by their Matrix ID
+  Future<void> setUserNote(String userId, String note) async {
+    if (note.isEmpty) {
+      await _preferences?.remove(_userNotesPrefix + userId);
+    } else {
+      await _preferences?.setString(_userNotesPrefix + userId, note);
+    }
+  }
 
   /// Comma-separated list of keywords that trigger notifications
   StringPreference notificationKeywords =

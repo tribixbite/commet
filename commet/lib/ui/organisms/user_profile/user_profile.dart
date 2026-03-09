@@ -7,6 +7,7 @@ import 'package:commet/client/components/user_presence/user_presence_component.d
 import 'package:commet/client/matrix/matrix_mxc_image_provider.dart';
 import 'package:commet/config/layout_config.dart';
 import 'package:commet/debug/log.dart';
+import 'package:commet/main.dart';
 import 'package:commet/ui/atoms/code_block.dart';
 import 'package:commet/ui/molecules/message_input.dart';
 import 'package:commet/ui/navigation/adaptive_dialog.dart';
@@ -89,6 +90,7 @@ class UserProfile extends StatefulWidget {
 class _UserProfileState extends State<UserProfile> {
   Profile? profile;
   ThemeData? theme;
+  String? userNote;
 
   late UserProfileComponent component;
 
@@ -105,6 +107,7 @@ class _UserProfileState extends State<UserProfile> {
   void initState() {
     super.initState();
     component = widget.client.getComponent<UserProfileComponent>()!;
+    userNote = preferences.getUserNote(widget.userId);
 
     component.getProfile(widget.userId).then((value) async {
       await stateFromProfile(value);
@@ -205,43 +208,92 @@ class _UserProfileState extends State<UserProfile> {
 
     return Theme(
       data: theme!,
-      child: UserProfileView(
-        userAvatar: avatar,
-        displayName: displayName!,
-        identifier: profile!.identifier,
-        userColor: profile!.defaultColor,
-        userBanner: banner,
-        presence: presence,
-        timezone: timezone,
-        bannerHeight: widget.bannerHeight,
-        width: widget.width,
-        doSafeArea: widget.doSafeArea,
-        maxBioHeight: widget.maxBioHeight,
-        showMessageButton: widget.showMessageButton,
-        isSelf: widget.client.self!.identifier == profile!.identifier,
-        onMessageButtonClicked: openDirectMessage,
-        onSetBanner: setBanner,
-        setPreviewColor: setPreviewColor,
-        setPreviewBrightness: setPreviewBrightness,
-        removeTimezone: removeTimezone,
-        onChangeName: changeName,
-        savePreviewTheme: savePreviewTheme,
-        setBio: setBio,
-        clearBio: clearBio,
-        badges: badges,
-        editBadges: editBadges,
-        bio: bio,
-        onSetAvatar: setAvatar,
-        setColorOverride: setColorOverride,
-        showSource: showSource,
-        onSetStatus: setStatus,
-        clearStatus: clearStatus,
-        shareCurrentTimezone: shareTimezone,
-        pronouns: pronouns,
-        hasColorOverride: widget.client
-                .getComponent<UserColorComponent>()
-                ?.getColor(profile!.identifier) !=
-            null,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          UserProfileView(
+            userAvatar: avatar,
+            displayName: displayName!,
+            identifier: profile!.identifier,
+            userColor: profile!.defaultColor,
+            userBanner: banner,
+            presence: presence,
+            timezone: timezone,
+            bannerHeight: widget.bannerHeight,
+            width: widget.width,
+            doSafeArea: widget.doSafeArea,
+            maxBioHeight: widget.maxBioHeight,
+            showMessageButton: widget.showMessageButton,
+            isSelf: widget.client.self!.identifier == profile!.identifier,
+            onMessageButtonClicked: openDirectMessage,
+            onSetBanner: setBanner,
+            setPreviewColor: setPreviewColor,
+            setPreviewBrightness: setPreviewBrightness,
+            removeTimezone: removeTimezone,
+            onChangeName: changeName,
+            savePreviewTheme: savePreviewTheme,
+            setBio: setBio,
+            clearBio: clearBio,
+            badges: badges,
+            editBadges: editBadges,
+            bio: bio,
+            onSetAvatar: setAvatar,
+            setColorOverride: setColorOverride,
+            showSource: showSource,
+            onSetStatus: setStatus,
+            clearStatus: clearStatus,
+            shareCurrentTimezone: shareTimezone,
+            pronouns: pronouns,
+            hasColorOverride: widget.client
+                    .getComponent<UserColorComponent>()
+                    ?.getColor(profile!.identifier) !=
+                null,
+          ),
+          // Private user notes section (not visible to the other user)
+          if (!isSelf)
+            _buildUserNotesSection(),
+        ],
+      ),
+    );
+  }
+
+  bool get isSelf => widget.client.self!.identifier == widget.userId;
+
+  /// Builds a private notes section for annotating other users
+  Widget _buildUserNotesSection() {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: widget.width),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.note_alt_outlined, size: 16),
+                const SizedBox(width: 4),
+                tiamat.Text.labelEmphasised("Private Note"),
+              ],
+            ),
+            const SizedBox(height: 4),
+            tiamat.Text.labelLow("Only visible to you"),
+            const SizedBox(height: 8),
+            TextField(
+              controller: TextEditingController(text: userNote ?? ''),
+              decoration: const InputDecoration(
+                hintText: 'Add a private note about this user...',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              maxLines: 3,
+              minLines: 1,
+              onChanged: (value) {
+                userNote = value;
+                preferences.setUserNote(widget.userId, value);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
