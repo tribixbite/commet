@@ -6,6 +6,7 @@ import 'package:commet/client/timeline_events/timeline_event_emote.dart';
 import 'package:commet/client/timeline_events/timeline_event_encrypted.dart';
 import 'package:commet/client/timeline_events/timeline_event_generic.dart';
 import 'package:commet/client/timeline_events/timeline_event_message.dart';
+import 'package:commet/client/timeline_events/timeline_event_poll.dart';
 import 'package:commet/client/timeline_events/timeline_event_sticker.dart';
 import 'package:commet/config/layout_config.dart';
 import 'package:commet/debug/log.dart';
@@ -15,6 +16,7 @@ import 'package:commet/ui/atoms/adaptive_context_menu.dart';
 import 'package:commet/ui/atoms/emoji_widget.dart';
 import 'package:commet/ui/molecules/timeline_events/events/timeline_event_view_generic.dart';
 import 'package:commet/ui/molecules/timeline_events/events/timeline_event_view_message.dart';
+import 'package:commet/ui/molecules/timeline_events/events/timeline_event_view_poll.dart';
 import 'package:commet/ui/molecules/timeline_events/timeline_event_date_time_marker.dart';
 import 'package:commet/ui/molecules/timeline_events/timeline_event_layout.dart';
 import 'package:commet/ui/molecules/timeline_events/timeline_event_menu.dart';
@@ -65,6 +67,7 @@ class TimelineViewEntry extends StatefulWidget {
 enum TimelineEventWidgetDisplayType {
   message,
   generic,
+  poll,
   hidden,
 }
 
@@ -134,6 +137,8 @@ class TimelineViewEntryState extends State<TimelineViewEntry>
         event is TimelineEventSticker ||
         event is TimelineEventEncrypted) {
       return TimelineEventWidgetDisplayType.message;
+    } else if (event is TimelineEventPoll) {
+      return TimelineEventWidgetDisplayType.poll;
     } else if (event is TimelineEventGeneric) {
       return TimelineEventWidgetDisplayType.generic;
     } else if (event.status == TimelineEventStatus.error) {
@@ -404,6 +409,17 @@ class TimelineViewEntryState extends State<TimelineViewEntry>
           jumpToEvent: widget.jumpToEvent,
           previewMedia: widget.previewMedia,
           initialIndex: widget.initialIndex);
+    if (_widgetType == TimelineEventWidgetDisplayType.poll) {
+      final event = widget.timeline.events[widget.initialIndex];
+      if (event is TimelineEventPoll) {
+        return TimelineEventViewPoll(
+          key: eventKey,
+          event: event,
+          room: widget.timeline.room,
+          // TODO: wire up vote submission via room.sendEvent
+        );
+      }
+    }
     if (_widgetType == TimelineEventWidgetDisplayType.generic)
       return TimelineEventViewGeneric(
         timeline: widget.timeline,
