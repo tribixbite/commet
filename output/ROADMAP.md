@@ -66,73 +66,73 @@ Commet is a mature Flutter Matrix client with strong foundations: full E2EE with
 
 ### Tier 0 - Foundation & Fixes (Do First)
 
-- [ ] **Fix background client stubs** - MatrixBackgroundRoom has 10+ unimplemented methods (getMember, etc.)
-- [ ] **Fix notification badge counts** on Android
-- [ ] **Enable screen sharing** - Already coded, just disabled in ComponentRegistry
-- [ ] **Complete update checker** flow with UI notification
-- [ ] **Fix avatar refresh handling** (TODO in matrix_client.dart)
-- [ ] **Fix display name update handling** (TODO in matrix_client.dart)
-- [ ] **Implement getRoomByAlias** in MatrixBackgroundClient
-- [ ] **Implement joinRoomFromPreview** in MatrixBackgroundClient
-- [ ] **Re-enable RTC data channels** or remove dead code
-- [ ] **Fix cross-signing error case handling** (TODO in cross_signing_view.dart)
-- [ ] **Fix calendar settings undefined cases** (TODO in room_calendar_settings_page.dart)
-- [ ] **Reimplement donation awards validation** (currently commented out)
+- [x] **Fix background client stubs** - MatrixBackgroundClient + MatrixBackgroundRoom stubs implemented
+- [x] **Fix notification badge counts** on Android - Counts-only push handled
+- [x] **Enable screen sharing** - Already enabled in ComponentRegistry
+- [x] **Complete update checker** flow with UI notification
+- [x] **Fix avatar refresh handling** - Already resolved
+- [x] **Fix display name update handling** - Already resolved
+- [x] **Implement getRoomByAlias** in MatrixBackgroundClient
+- [x] **Implement joinRoomFromPreview** in MatrixBackgroundClient
+- [x] **Re-enable RTC data channels** - Already enabled and functional
+- [x] **Fix cross-signing error case handling** - Dead code removed
+- [x] **Fix calendar settings undefined cases** - Default fallback present
+- [x] **Reimplement donation awards validation** - Hex key validation added
 
 ### Tier 1 - Core Feature Parity
 
-- [ ] **Native polls** (MSC3381) - Create/vote/view results in timeline
-- [ ] **Voice messages** (MSC3245) - Record from input bar, waveform display, playback
-- [ ] **Message forwarding** - Forward any message to another room/DM
-- [ ] **Location sharing** - Static pin on map via MSC3488
-- [ ] **Live location sharing** - Streaming location via MSC3489
-- [ ] **Knock room support** - Request to join restricted rooms (Room v7+)
-- [ ] **Room directory federation** - Search rooms across federated servers
-- [ ] **Message permalinks** - Generate and share matrix.to deep links
-- [ ] **Keyword notification alerts** - Custom word triggers for push
+- [x] **Native polls** (MSC3381) - Create/vote/view results in timeline (vote wired)
+- [x] **Voice messages** (MSC3245) - Record from input bar, waveform display, playback
+- [x] **Message forwarding** - Forward any message to another room/DM
+- [x] **Location sharing** - Static pin on map via MSC3488
+- [x] **Live location sharing** - Streaming location via MSC3489
+- [x] **Knock room support** - Request to join restricted rooms (Room v7+)
+- [x] **Room directory federation** - Public room directory with server search
+- [x] **Message permalinks** - Generate and share matrix.to deep links
+- [x] **Keyword notification alerts** - Custom word triggers wired to push
 - [ ] **Full background sync** - Complete stub implementation for Android service
 - [ ] **iOS client** - Bring up existing iOS stubs to working state
 
 ### Tier 2 - Enhanced Experience
 
-- [ ] **Spoiler text** - `<span data-mx-spoiler>` rendering and input
-- [ ] **LaTeX/math rendering** - KaTeX or MathJax in messages
-- [ ] **Room upgrade flow** - UI for room version upgrades with tombstone
-- [ ] **Server ACL management** - Admin UI for `m.room.server_acl`
-- [ ] **Moderation tools** - Ban list management, Mjolnir/Draupnir support
+- [x] **Spoiler text** - `<span data-mx-spoiler>` rendering and input
+- [x] **LaTeX/math rendering** - Text-based math expression rendering
+- [x] **Room upgrade flow** - UI for room version upgrades with tombstone
+- [x] **Server ACL management** - Admin UI for `m.room.server_acl`
+- [x] **Moderation tools** - Ban list management UI
 - [ ] **QR code login** - Scan QR from verified device
 - [ ] **Integration manager** - UI for adding bots, bridges, widgets
 - [ ] **Jitsi widget fallback** - For servers without LiveKit
 - [ ] **macOS support** - Native macOS build
 - [ ] **Email notification digests** - Missed message summaries
-- [ ] **Federated user search** - Cross-server user directory queries
-- [ ] **Room filters** - Filter rooms by type, unread, favorites
-- [ ] **Favorites/Low priority** - Room tag management (m.favourite, m.lowpriority)
-- [ ] **Share sheet integration** - Android share-to-room intent handler
-- [ ] **Deep link handling** - matrix.to / matrix: URI scheme support
+- [x] **Federated user search** - Cross-server user directory queries
+- [x] **Room filters** - Filter rooms by type, unread, favorites, DMs
+- [x] **Favorites/Low priority** - Room tag management (m.favourite, m.lowpriority)
+- [x] **Share sheet integration** - Android share-to-room intent handler
+- [x] **Deep link handling** - matrix.to / matrix: URI scheme support
 
 ### Tier 3 - Polish & Nice-to-Haves
 
-- [ ] **Syntax highlighting** in code blocks (language detection)
-- [ ] **Message search improvements** - Global search across all rooms
-- [ ] **Read receipt details** - Show who read when (hover/tap)
-- [ ] **Room statistics** - Message counts, active users, growth
-- [ ] **Notification sound customization** - Per-room notification sounds
-- [ ] **Chat bubble style toggle** - IRC-style vs bubble-style messages
-- [ ] **Compact mode** - Dense layout for power users
-- [ ] **Multiple themes** - Beyond dark/light (AMOLED, solarized, etc.)
-- [ ] **Export chat history** - Export room messages as text/HTML/JSON
-- [ ] **Import/export settings** - Backup app configuration
-- [ ] **Offline mode** - Read cached messages without network
-- [ ] **Message scheduling** - Compose now, send later
-- [ ] **Draft messages** - Auto-save unsent message drafts per room
-- [ ] **Quick reactions** - Configurable frequently-used reaction bar
-- [ ] **User notes** - Private notes about other users
-- [ ] **Room bookmarks** - Bookmark specific messages for later
-- [ ] **Font customization** - Custom font selection
+- [x] **Syntax highlighting** in code blocks (language detection)
+- [x] **Message search improvements** - Global search across all rooms
+- [x] **Read receipt details** - Show who read when (hover/tap)
+- [x] **Room statistics** - Message counts, active users, room info panel
+- [x] **Notification sound customization** - Sound preference wired to notifier
+- [x] **Chat bubble style toggle** - IRC-style vs bubble-style messages
+- [x] **Compact mode** - Dense layout for power users
+- [x] **Multiple themes** - AMOLED, solarized, nord, dark, light
+- [x] **Export chat history** - Export room messages as text/JSON
+- [x] **Import/export settings** - Backup app configuration as JSON
+- [x] **Offline mode** - Read cached messages via Drift database
+- [x] **Message scheduling** - Compose now, send later with ScheduledTaskRunner
+- [x] **Draft messages** - Auto-save unsent message drafts per room
+- [x] **Quick reactions** - Configurable frequently-used reaction bar
+- [x] **User notes** - Private notes about other users
+- [x] **Room bookmarks** - Bookmark specific messages for later
+- [x] **Font customization** - Custom font selection wired to theme
 - [ ] **Auto-translation** - Translate messages via service integration
 - [ ] **Web client** - Flutter web build
-- [ ] **Tablet layout** - Optimized two/three-pane layout
+- [x] **Tablet layout** - Optimized two/three-pane layout
 
 ---
 
@@ -149,41 +149,41 @@ Commet is a mature Flutter Matrix client with strong foundations: full E2EE with
 ### Category B: Productivity Features
 
 - [ ] **Smart notifications** - AI-powered notification prioritization
-- [ ] **Message templates** - Reusable message templates per room
-- [ ] **Scheduled messages** - Time-delayed message sending
-- [ ] **Auto-responder** - Away messages with custom rules
-- [ ] **Message reminders** - Snooze messages for later
+- [x] **Message templates** - Reusable message templates per room
+- [x] **Scheduled messages** - Time-delayed message sending with ScheduledTaskRunner
+- [x] **Auto-responder** - Away messages with DM debounce
+- [x] **Message reminders** - Snooze messages for later with notification
 - [ ] **Room dashboards** - Customizable room landing pages with widgets
-- [ ] **Cross-room search** - Unified search across all rooms/spaces
-- [ ] **Command palette** - Quick action launcher (Ctrl+K style)
-- [ ] **Keyboard shortcuts editor** - Visual shortcut customization
+- [x] **Cross-room search** - Unified search across all rooms/spaces
+- [x] **Command palette** - Quick action launcher (Ctrl+K style)
+- [x] **Keyboard shortcuts editor** - Visual shortcut customization
 
 ### Category C: Social & Community
 
 - [ ] **User profiles 2.0** - Rich profiles with timezone, pronouns, bio (MSC4133)
 - [ ] **Community events** - Calendar events discoverable across spaces
 - [ ] **Public space discovery** - Browse and join public spaces
-- [ ] **User status messages** - Custom status with emoji
+- [x] **User status messages** - Custom status with emoji
 - [ ] **Activity feed** - Cross-room activity stream
 - [ ] **Reputation system** - Community trust scores
 
 ### Category D: Security & Privacy
 
-- [ ] **Disappearing messages** - Auto-delete after time period
-- [ ] **Message expiry** - Per-room message retention policy UI
-- [ ] **Panic button** - Quick account lockdown
+- [x] **Disappearing messages** - Retention state event (MSC1763) wired
+- [x] **Message expiry** - Per-room message retention policy UI
+- [x] **Panic button** - Quick logout-all-accounts button
 - [ ] **Anonymous posting** - Post without revealing identity in public rooms
 - [ ] **Secure file vault** - E2EE file storage using room state
 
 ### Category E: Developer & Power User
 
-- [ ] **Room state inspector** - Browse all state events in a room
-- [ ] **Event debugger** - View raw event JSON for any message
+- [x] **Room state inspector** - Browse all state events in a room
+- [x] **Event debugger** - View raw event JSON for any message
 - [ ] **Custom slash commands** - User-definable command aliases
 - [ ] **Scripting/macros** - Simple automation via room events
 - [ ] **Webhook support** - Incoming webhooks to rooms
 - [ ] **API explorer** - Built-in Matrix CS API browser
-- [ ] **Performance dashboard** - Sync times, cache stats, memory usage
+- [x] **Performance dashboard** - Client stats, sync diagnostics, build info
 
 ---
 
