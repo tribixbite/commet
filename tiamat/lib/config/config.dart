@@ -4,3 +4,5 @@ export './style/theme_extensions.dart';
 export './style/theme_light.dart';
 export './style/theme_amoled.dart';
 export './style/theme_you.dart';
+export './style/theme_solarized.dart';
+export './style/theme_nord.dart';

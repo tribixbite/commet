@@ -78,6 +78,12 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 ),
             ],
           ),
+        const SizedBox(height: 10),
+        Panel(
+          mode: tiamat.TileType.surfaceContainerLow,
+          header: "Keyword Alerts",
+          child: keywordAlertsSection(),
+        ),
         if (preferences.developerMode.value)
           const Panel(
             mode: tiamat.TileType.surfaceContainerLow,
@@ -87,6 +93,37 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       ],
     );
   }
+
+  Widget keywordAlertsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: tiamat.Text.labelLow(
+            "Get notified when messages contain specific words. Separate multiple keywords with commas.",
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _keywordController,
+            decoration: const InputDecoration(
+              hintText: "e.g. urgent, deploy, @team",
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              preferences.notificationKeywords.set(value);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  late final TextEditingController _keywordController = TextEditingController(
+    text: preferences.notificationKeywords.value,
+  );
 
   Widget buildNotificationSettings() {
     return Column(

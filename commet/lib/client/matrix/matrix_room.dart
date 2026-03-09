@@ -338,7 +338,20 @@ class MatrixRoom extends Room {
     var evaluator = _matrixRoom.client.pushruleEvaluator;
     var match = evaluator.match((event as MatrixTimelineEvent).event);
 
-    return match.notify;
+    if (match.notify) return true;
+
+    // Check custom keyword triggers from user preferences
+    if (event is TimelineEventMessage) {
+      final keywords = preferences.notificationKeywordList;
+      if (keywords.isNotEmpty) {
+        final body = event.plainTextBody.toLowerCase();
+        for (final keyword in keywords) {
+          if (body.contains(keyword)) return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   @override

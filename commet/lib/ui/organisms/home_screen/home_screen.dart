@@ -36,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late List<Room> recentActivity;
 
   Client? filterClient;
+  String _searchQuery = '';
 
   late List<StreamSubscription> subscriptions;
 
@@ -116,6 +117,27 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Search rooms...',
+              prefixIcon: const Icon(Icons.search, size: 20),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value.toLowerCase();
+              });
+            },
+          ),
+        ),
         Flexible(
           child: ListView(
             padding: const EdgeInsets.all(0),
@@ -127,9 +149,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     IncomingInvitationsWidget(widget.clientManager),
                     HomeScreenView(
                       clientManager: widget.clientManager,
-                      rooms: widget.clientManager
-                          .singleRooms(filterClient: filterClient),
-                      recentActivity: recentActivity,
+                      rooms: _filterRooms(widget.clientManager
+                          .singleRooms(filterClient: filterClient)),
+                      recentActivity: _searchQuery.isEmpty
+                          ? recentActivity
+                          : _filterRooms(recentActivity),
                       onRoomClicked: (room) => EventBus.openRoom
                           .add((room.identifier, room.client.identifier)),
                       joinRoom: joinRoom,
@@ -158,5 +182,15 @@ class _HomeScreenState extends State<HomeScreen> {
       filterClient = event;
       updateRecent();
     });
+  }
+
+  /// Filters rooms by search query, matching display name or topic
+  List<Room> _filterRooms(List<Room> rooms) {
+    if (_searchQuery.isEmpty) return rooms;
+    return rooms
+        .where((r) =>
+            r.displayName.toLowerCase().contains(_searchQuery) ||
+            (r.topic?.toLowerCase().contains(_searchQuery) ?? false))
+        .toList();
   }
 }

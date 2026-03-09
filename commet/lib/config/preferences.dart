@@ -17,6 +17,8 @@ import 'package:tiamat/config/style/theme_amoled.dart';
 import 'package:tiamat/config/style/theme_json_converter.dart';
 import 'package:tiamat/config/style/theme_dark.dart';
 import 'package:tiamat/config/style/theme_light.dart';
+import 'package:tiamat/config/style/theme_nord.dart';
+import 'package:tiamat/config/style/theme_solarized.dart';
 import 'package:tiamat/config/style/theme_you.dart';
 
 class Preferences {
@@ -114,6 +116,8 @@ class Preferences {
       return switch (theme.value) {
         "dark" => ThemeDark.theme,
         "amoled" => ThemeAmoled.theme,
+        "solarized" => ThemeSolarized.theme,
+        "nord" => ThemeNord.theme,
         _ => ThemeDark.theme,
       };
     }
@@ -126,6 +130,8 @@ class Preferences {
       "light" => ThemeLight.theme,
       "dark" => ThemeDark.theme,
       "amoled" => ThemeAmoled.theme,
+      "solarized" => ThemeSolarized.theme,
+      "nord" => ThemeNord.theme,
       _ => ThemeDark.theme,
     };
   }
@@ -371,4 +377,19 @@ class Preferences {
 
   NullableStringPreference lastDownloadLocation =
       NullableStringPreference("last_download_location", defaultValue: null);
+
+  /// Comma-separated list of keywords that trigger notifications
+  StringPreference notificationKeywords =
+      StringPreference("notification_keywords", defaultValue: "");
+
+  /// Returns parsed keyword list for notification matching
+  List<String> get notificationKeywordList {
+    final raw = notificationKeywords.value;
+    if (raw.isEmpty) return [];
+    return raw
+        .split(',')
+        .map((k) => k.trim().toLowerCase())
+        .where((k) => k.isNotEmpty)
+        .toList();
+  }
 }

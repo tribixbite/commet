@@ -51,6 +51,12 @@ class _ThemeListWidgetState extends State<ThemeListWidget> {
   String get labelThemeAmoled => Intl.message("Amoled",
       name: "labelThemeAmoled", desc: "Label for the light theme");
 
+  String get labelThemeSolarized => Intl.message("Solarized Dark",
+      name: "labelThemeSolarized", desc: "Label for the Solarized Dark theme");
+
+  String get labelThemeNord => Intl.message("Nord",
+      name: "labelThemeNord", desc: "Label for the Nord theme");
+
   List<_ThemeEntry> get defaultThemes => [
         _ThemeEntry(labelThemeLight, (BuildContext context) async {
           preferences.theme.set("light");
@@ -68,7 +74,18 @@ class _ThemeListWidgetState extends State<ThemeListWidget> {
           preferences.theme.set("amoled");
           var theme = await preferences.resolveTheme(
               overrideBrightness: Brightness.dark);
-
+          if (context.mounted) ThemeChanger.setTheme(context, theme);
+        }),
+        _ThemeEntry(labelThemeSolarized, (BuildContext context) async {
+          preferences.theme.set("solarized");
+          var theme = await preferences.resolveTheme(
+              overrideBrightness: Brightness.dark);
+          if (context.mounted) ThemeChanger.setTheme(context, theme);
+        }),
+        _ThemeEntry(labelThemeNord, (BuildContext context) async {
+          preferences.theme.set("nord");
+          var theme = await preferences.resolveTheme(
+              overrideBrightness: Brightness.dark);
           if (context.mounted) ThemeChanger.setTheme(context, theme);
         }),
       ];

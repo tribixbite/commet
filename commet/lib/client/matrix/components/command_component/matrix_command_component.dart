@@ -26,6 +26,16 @@ class MatrixCommandComponent extends CommandComponent<MatrixClient> {
     client.getMatrixClient().addCommand("clearemojistats", clearEmojiStats);
     client.getMatrixClient().addCommand("setprofile", setProfile);
     client.getMatrixClient().addCommand("addwidget", addWidget);
+    client.getMatrixClient().addCommand("shrug", _shrug);
+    client.getMatrixClient().addCommand("tableflip", _tableflip);
+    client.getMatrixClient().addCommand("unflip", _unflip);
+    client.getMatrixClient().addCommand("lenny", _lenny);
+    client.getMatrixClient().addCommand("nick", _nick);
+    client.getMatrixClient().addCommand("roomnick", _roomNick);
+    client.getMatrixClient().addCommand("rainbow", _rainbow);
+    client.getMatrixClient().addCommand("plain", _plain);
+    client.getMatrixClient().addCommand("spoiler", _spoiler);
+    client.getMatrixClient().addCommand("confetti", _confetti);
   }
 
   @override
@@ -138,6 +148,133 @@ class MatrixCommandComponent extends CommandComponent<MatrixClient> {
     await client.matrixClient.setRoomStateWithKey(
         args.room!.id, "im.vector.modular.widgets", id, content);
 
+    return null;
+  }
+
+  /// Appends ¯\_(ツ)_/¯ to the message
+  FutureOr<String?> _shrug(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    final text = args.msg.isEmpty ? r'¯\_(ツ)_/¯' : '${args.msg} ¯\\_(ツ)_/¯';
+    await args.room?.sendTextEvent(text);
+    return null;
+  }
+
+  /// Sends (╯°□°)╯︵ ┻━┻
+  FutureOr<String?> _tableflip(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    final text = args.msg.isEmpty
+        ? '(╯°□°)╯︵ ┻━┻'
+        : '${args.msg} (╯°□°)╯︵ ┻━┻';
+    await args.room?.sendTextEvent(text);
+    return null;
+  }
+
+  /// Sends ┬─┬ ノ( ゜-゜ノ)
+  FutureOr<String?> _unflip(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    final text = args.msg.isEmpty
+        ? '┬─┬ ノ( ゜-゜ノ)'
+        : '${args.msg} ┬─┬ ノ( ゜-゜ノ)';
+    await args.room?.sendTextEvent(text);
+    return null;
+  }
+
+  /// Sends ( ͡° ͜ʖ ͡°)
+  FutureOr<String?> _lenny(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    final text =
+        args.msg.isEmpty ? '( ͡° ͜ʖ ͡°)' : '${args.msg} ( ͡° ͜ʖ ͡°)';
+    await args.room?.sendTextEvent(text);
+    return null;
+  }
+
+  /// Changes display name across all rooms
+  FutureOr<String?> _nick(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    if (args.msg.isEmpty) return 'Usage: /nick <display name>';
+    await client.setDisplayName(args.msg);
+    return null;
+  }
+
+  /// Changes display name in the current room only
+  FutureOr<String?> _roomNick(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    if (args.msg.isEmpty || args.room == null) {
+      return 'Usage: /roomnick <display name>';
+    }
+    final userId = client.getMatrixClient().userID!;
+    await args.room!.setMemberDisplayName(userId, args.msg);
+    return null;
+  }
+
+  /// Sends message with rainbow-colored HTML spans
+  FutureOr<String?> _rainbow(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    if (args.msg.isEmpty) return 'Usage: /rainbow <message>';
+    final colors = [
+      '#ff0000', '#ff7f00', '#ffff00', '#00ff00',
+      '#0000ff', '#4b0082', '#9400d3',
+    ];
+    final buf = StringBuffer();
+    int colorIndex = 0;
+    for (var i = 0; i < args.msg.length; i++) {
+      final ch = args.msg[i];
+      if (ch == ' ') {
+        buf.write(' ');
+      } else {
+        buf.write(
+            '<font color="${colors[colorIndex % colors.length]}">$ch</font>');
+        colorIndex++;
+      }
+    }
+    await args.room?.sendEvent({
+      'msgtype': matrix.MessageTypes.Text,
+      'body': args.msg,
+      'format': 'org.matrix.custom.html',
+      'formatted_body': buf.toString(),
+    });
+    return null;
+  }
+
+  /// Sends message as plain text without markdown processing
+  FutureOr<String?> _plain(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    if (args.msg.isEmpty) return 'Usage: /plain <message>';
+    await args.room?.sendTextEvent(args.msg);
+    return null;
+  }
+
+  /// Wraps message in a spoiler tag
+  FutureOr<String?> _spoiler(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    if (args.msg.isEmpty) return 'Usage: /spoiler <message>';
+    // Parse optional reason: /spoiler reason|hidden text
+    String reason = '';
+    String content = args.msg;
+    if (args.msg.contains('|')) {
+      final parts = args.msg.split('|');
+      reason = parts[0].trim();
+      content = parts.sublist(1).join('|').trim();
+    }
+    final reasonAttr = reason.isNotEmpty ? ' data-mx-spoiler="$reason"' : ' data-mx-spoiler';
+    await args.room?.sendEvent({
+      'msgtype': matrix.MessageTypes.Text,
+      'body': '||${args.msg}||',
+      'format': 'org.matrix.custom.html',
+      'formatted_body': '<span$reasonAttr>$content</span>',
+    });
+    return null;
+  }
+
+  /// Sends message with confetti effect (Commet-specific)
+  FutureOr<String?> _confetti(
+      matrix.CommandArgs args, StringBuffer? out) async {
+    if (args.msg.isEmpty) return 'Usage: /confetti <message>';
+    await args.room?.sendEvent({
+      'msgtype': matrix.MessageTypes.Text,
+      'body': args.msg,
+      'chat.commet.effect': 'confetti',
+    });
     return null;
   }
 }
