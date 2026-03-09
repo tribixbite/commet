@@ -16,4 +16,23 @@ class AndroidIntentHelper {
 
     return null;
   }
+
+  /// Extracts shared text from an ACTION_SEND intent
+  static String? getSharedText(Intent? intent) {
+    if (intent?.action != "android.intent.action.SEND") return null;
+    // EXTRA_TEXT is the standard key for shared text
+    return intent?.extra?["android.intent.extra.TEXT"] as String?;
+  }
+
+  /// Extracts shared file URI from an ACTION_SEND intent
+  static String? getSharedFileUri(Intent? intent) {
+    if (intent?.action != "android.intent.action.SEND") return null;
+    return intent?.extra?["android.intent.extra.STREAM"] as String?;
+  }
+
+  /// Returns true if the intent is a share action
+  static bool isShareIntent(Intent? intent) {
+    return intent?.action == "android.intent.action.SEND" ||
+        intent?.action == "android.intent.action.SEND_MULTIPLE";
+  }
 }

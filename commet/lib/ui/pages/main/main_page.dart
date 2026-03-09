@@ -116,6 +116,9 @@ class MainPageState extends State<MainPage> {
 
     EventBus.openUserProfile.stream.listen(onOpenUserProfileSignal);
 
+    // Handle share-to-room intent from Android share sheet
+    EventBus.onShareReceived.stream.listen(_onShareReceived);
+
     onClientRemovedSubscription =
         clientManager.onClientRemoved.stream.listen(onClientRemoved);
 
@@ -279,6 +282,116 @@ class MainPageState extends State<MainPage> {
       _currentView = MainPageSubView.home;
       clearSpaceSelection();
     });
+  }
+
+  /// Handles shared text from Android share sheet by showing a room picker
+  void _onShareReceived(String sharedText) {
+    if (!mounted) return;
+
+    // Collect all rooms the user can send messages to
+    final allRooms = clientManager.clients
+        .expand((c) => c.rooms)
+        .where((r) => r.permissions.canSendMessage)
+        .toList();
+
+    AdaptiveDialog.show(
+      context,
+      title: "Share to...",
+      builder: (dialogContext) {
+        String search = '';
+        bool sending = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final filtered = search.isEmpty
+                ? allRooms
+                : allRooms
+                    .where((r) =>
+                        r.displayName.toLowerCase().contains(search.toLowerCase()))
+                    .toList();
+            return SizedBox(
+              width: 400,
+              height: 500,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        hintText: 'Search rooms...',
+                        prefixIcon: Icon(Icons.search, size: 20),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (v) => setDialogState(() => search = v),
+                    ),
+                  ),
+                  // Preview of shared content
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(ctx).colorScheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        sharedText.length > 200
+                            ? '${sharedText.substring(0, 200)}...'
+                            : sharedText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final room = filtered[index];
+                        return ListTile(
+                          leading: room.avatar != null
+                              ? CircleAvatar(backgroundImage: room.avatar)
+                              : CircleAvatar(
+                                  backgroundColor: room.defaultColor,
+                                  child: Text(
+                                    room.displayName.isNotEmpty
+                                        ? room.displayName[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                          title: Text(room.displayName),
+                          enabled: !sending,
+                          onTap: () async {
+                            setDialogState(() => sending = true);
+                            try {
+                              await room.sendMessage(message: sharedText);
+                              if (dialogContext.mounted) {
+                                Navigator.of(dialogContext).pop();
+                              }
+                              // Navigate to the room after sharing
+                              selectRoom(room);
+                            } catch (_) {
+                              setDialogState(() => sending = false);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void onOpenRoomSignal((String, String?) strings) async {

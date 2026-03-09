@@ -63,6 +63,11 @@ class EventBus {
   static StreamController<MessageEffectParticles> doMessageEffect =
       StreamController.broadcast();
 
+  /// Fires when content is shared to the app via Android share sheet
+  /// Value is the shared text content
+  static StreamController<String> onShareReceived =
+      StreamController<String>.broadcast();
+
   static StreamController<ScopePopped> onPopInvoked =
       StreamController.broadcast(sync: true);
 }

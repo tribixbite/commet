@@ -229,6 +229,11 @@ class AndroidNotifier implements Notifier {
             groupConversation: !content.isDirectMessage,
             messages: [message]);
 
+    // Apply notification sound preference
+    final soundPref = preferences.notificationSound.value;
+    final isSilent = content.priority == NotificationPriority.low ||
+        soundPref == "silent";
+
     var details = AndroidNotificationDetails("messages", "Message Received",
         importance: Importance.high,
         priority: Priority.high,
@@ -240,7 +245,7 @@ class AndroidNotifier implements Notifier {
         groupAlertBehavior: GroupAlertBehavior.all,
         styleInformation: style,
         shortcutId: content.roomId,
-        silent: content.priority == NotificationPriority.low,
+        silent: isSilent,
         ticker: content.content,
         bubble: bubblesEnabled
             ? BubbleMetadata(

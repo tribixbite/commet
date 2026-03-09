@@ -60,6 +60,8 @@ class _RoomSecuritySettingsPageState extends State<RoomSecuritySettingsPage> {
         if (widget.room is MatrixRoom) _roomUpgradeSection(),
         // Server ACL management for Matrix rooms with admin permissions
         if (widget.room is MatrixRoom) _serverAclSection(),
+        // Ban list management for moderation
+        if (widget.room is MatrixRoom) _banListSection(),
       ],
     );
   }
@@ -216,7 +218,7 @@ class _RoomSecuritySettingsPageState extends State<RoomSecuritySettingsPage> {
               onPressed: () async {
                 Navigator.pop(ctx);
                 try {
-                  final newRoomId = await matrixRoom.client
+                  await matrixRoom.client
                       .upgradeRoom(matrixRoom.id, selectedVersion);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -497,6 +499,142 @@ class _RoomSecuritySettingsPageState extends State<RoomSecuritySettingsPage> {
                 widget.room.client, visibility),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Ban list management section - view and manage banned users
+  Widget _banListSection() {
+    final matrixRoom = (widget.room as MatrixRoom).matrixRoom;
+    final canBan = widget.room.permissions.canBan;
+
+    // Get banned members from room state
+    final bannedMembers = matrixRoom
+        .getParticipants()
+        .where((u) => u.membership == matrix.Membership.ban)
+        .toList();
+
+    return tiamat.Panel(
+      mode: tiamat.TileType.surfaceContainerLow,
+      header: "Ban List",
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: tiamat.Text.labelLow(
+              bannedMembers.isEmpty
+                  ? "No banned users in this room."
+                  : "${bannedMembers.length} banned user${bannedMembers.length == 1 ? '' : 's'}:",
+            ),
+          ),
+          for (final user in bannedMembers)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+              child: ListTile(
+                dense: true,
+                leading: const Icon(Icons.block, size: 16, color: Colors.red),
+                title: Text(
+                  user.displayName ?? user.id,
+                  style: const TextStyle(fontSize: 13),
+                ),
+                subtitle: user.displayName != null
+                    ? Text(user.id, style: const TextStyle(fontSize: 11))
+                    : null,
+                trailing: canBan
+                    ? IconButton(
+                        icon: const Icon(Icons.undo, size: 16),
+                        tooltip: "Unban",
+                        onPressed: () async {
+                          try {
+                            await matrixRoom.unban(user.id);
+                            if (mounted) {
+                              setState(() {});
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        "Unbanned ${user.displayName ?? user.id}")),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text("Failed to unban: $e")),
+                              );
+                            }
+                          }
+                        },
+                      )
+                    : null,
+              ),
+            ),
+          // Ban user button
+          if (canBan)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              child: OutlinedButton.icon(
+                onPressed: () => _showBanUserDialog(matrixRoom),
+                icon: const Icon(Icons.person_off, size: 16),
+                label: const Text("Ban User",
+                    style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  minimumSize: const Size(0, 32),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Shows dialog to ban a user by Matrix ID
+  void _showBanUserDialog(matrix.Room matrixRoom) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Ban User"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: "@user:example.com",
+            labelText: "User ID",
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              final userId = controller.text.trim();
+              if (userId.isNotEmpty) {
+                Navigator.pop(ctx);
+                try {
+                  await matrixRoom.ban(userId);
+                  if (mounted) {
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Banned $userId")),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to ban: $e")),
+                    );
+                  }
+                }
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text("Ban"),
+          ),
+        ],
       ),
     );
   }

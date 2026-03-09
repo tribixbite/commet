@@ -86,6 +86,8 @@ class Preferences {
           WidgetsBinding.instance.platformDispatcher.platformBrightness;
     }
 
+    ThemeData resolved;
+
     if (!PlatformUtils.isWeb) {
       var custom = await ThemeConfig.getThemeByName(preferences.theme.value);
       if (custom != null) {
@@ -93,7 +95,7 @@ class Preferences {
         var json = const JsonDecoder().convert(jsonString);
         var themedata = await ThemeJsonConverter.fromJson(json, custom);
         if (themedata != null) {
-          return themedata;
+          return _applyFontFamily(themedata);
         }
       }
     }
@@ -109,24 +111,26 @@ class Preferences {
     }
 
     if (overrideBrightness != null && shouldFollowSystemColors.value) {
-      return ThemeYou.theme(overrideBrightness);
+      resolved = await ThemeYou.theme(overrideBrightness);
+      return _applyFontFamily(resolved);
     }
 
     if (overrideBrightness == Brightness.dark) {
-      return switch (theme.value) {
+      resolved = switch (theme.value) {
         "dark" => ThemeDark.theme,
         "amoled" => ThemeAmoled.theme,
         "solarized" => ThemeSolarized.theme,
         "nord" => ThemeNord.theme,
         _ => ThemeDark.theme,
       };
+      return _applyFontFamily(resolved);
     }
 
     if (overrideBrightness == Brightness.light) {
-      return ThemeLight.theme;
+      return _applyFontFamily(ThemeLight.theme);
     }
 
-    return switch (theme.value) {
+    resolved = switch (theme.value) {
       "light" => ThemeLight.theme,
       "dark" => ThemeDark.theme,
       "amoled" => ThemeAmoled.theme,
@@ -134,6 +138,18 @@ class Preferences {
       "nord" => ThemeNord.theme,
       _ => ThemeDark.theme,
     };
+    return _applyFontFamily(resolved);
+  }
+
+  /// Applies the user's font family preference to the resolved theme
+  ThemeData _applyFontFamily(ThemeData theme) {
+    final font = fontFamily.value;
+    // Default font doesn't need override
+    if (font == "RobotoCustom" || font.isEmpty) return theme;
+
+    return theme.copyWith(
+      textTheme: theme.textTheme.apply(fontFamily: font),
+    );
   }
 
   Future<void> clear() async {

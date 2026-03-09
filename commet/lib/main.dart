@@ -24,6 +24,7 @@ import 'package:commet/utils/android_intent_helper.dart';
 import 'package:commet/utils/custom_safe_area.dart';
 import 'package:commet/utils/custom_uri.dart';
 import 'package:commet/utils/background_tasks/background_task_manager.dart';
+import 'package:commet/utils/scheduled_task_runner.dart';
 import 'package:commet/utils/database/database_server.dart';
 import 'package:commet/utils/emoji/unicode_emoji.dart';
 import 'package:commet/utils/event_bus.dart';
@@ -211,6 +212,9 @@ Future<void> initNecessary() async {
   shortcutsManager.init();
   NotificationManager.init();
 
+  // Start periodic checker for scheduled messages and reminders
+  ScheduledTaskRunner.start();
+
   NeedsPostLoginInit.doPostLoginInit();
 }
 
@@ -244,10 +248,17 @@ Future<void> startGui() async {
 
     var initialIntent = await ReceiveIntent.getInitialIntent();
     ReceiveIntent.receivedIntentStream.listen((event) {
-      Log.i("Received intent: ${initialIntent}");
+      Log.i("Received intent: $event");
       var uri = AndroidIntentHelper.getUriFromIntent(event);
       if (uri is OpenRoomURI) {
         EventBus.openRoom.add((uri.roomId, uri.clientId));
+      }
+      // Handle share intents from other apps
+      if (AndroidIntentHelper.isShareIntent(event)) {
+        final sharedText = AndroidIntentHelper.getSharedText(event);
+        if (sharedText != null && sharedText.isNotEmpty) {
+          EventBus.onShareReceived.add(sharedText);
+        }
       }
     });
 
@@ -258,6 +269,17 @@ Future<void> startGui() async {
     if (uri is OpenRoomURI) {
       initialClientId = uri.clientId;
       initialRoomId = uri.roomId;
+    }
+
+    // Handle share intent on cold start
+    if (AndroidIntentHelper.isShareIntent(initialIntent)) {
+      final sharedText = AndroidIntentHelper.getSharedText(initialIntent);
+      if (sharedText != null && sharedText.isNotEmpty) {
+        // Delayed to ensure UI is ready before showing share picker
+        Future.delayed(const Duration(seconds: 1), () {
+          EventBus.onShareReceived.add(sharedText);
+        });
+      }
     }
   }
 

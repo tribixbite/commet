@@ -332,6 +332,9 @@ class MatrixRoom extends Room {
     }
 
     if (event is TimelineEventMessage || event is TimelineEventSticker) {
+      // Auto-responder: send away message for DMs when enabled
+      _maybeAutoRespond(event);
+
       // let push notifications handle it
       if (BuildConfig.ANDROID) {
         return;
@@ -344,6 +347,31 @@ class MatrixRoom extends Room {
       }
     }
   }
+
+  /// Sends an automatic reply if auto-responder is enabled and this is a DM
+  void _maybeAutoRespond(TimelineEvent event) {
+    if (!preferences.autoResponderEnabled.value) return;
+    final msg = preferences.autoResponderMessage.value;
+    if (msg.isEmpty) return;
+
+    // Only auto-respond to direct messages
+    final dmComponent =
+        client.getComponent<DirectMessagesComponent>();
+    if (dmComponent == null || !dmComponent.isRoomDirectMessage(this)) return;
+
+    // Debounce: don't auto-respond more than once per 5 minutes per room
+    final now = DateTime.now();
+    if (_lastAutoRespondTime != null &&
+        now.difference(_lastAutoRespondTime!).inMinutes < 5) {
+      return;
+    }
+    _lastAutoRespondTime = now;
+
+    // Send the auto-reply asynchronously
+    sendMessage(message: msg);
+  }
+
+  DateTime? _lastAutoRespondTime;
 
   @override
   bool shouldNotify(TimelineEvent event) {
