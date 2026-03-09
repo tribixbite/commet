@@ -22,6 +22,7 @@ enum SidePanelState {
   search,
   pinnedMessages,
   calendar,
+  roomInfo,
   nothing
 }
 
@@ -57,6 +58,7 @@ class _RoomSidePanelState extends State<RoomSidePanel> {
       EventBus.openPinnedMessages.stream.listen(onShowPinnedMessages),
       EventBus.openCalendar.stream.listen(onShowCalendar),
       EventBus.toggleRoomSidePanel.stream.listen(onToggleSidePanel),
+      EventBus.openRoomInfo.stream.listen(onShowRoomInfo),
     ];
     super.initState();
   }
@@ -102,6 +104,8 @@ class _RoomSidePanelState extends State<RoomSidePanel> {
         return buildPinnedMessages();
       case SidePanelState.calendar:
         return buildCalendar();
+      case SidePanelState.roomInfo:
+        return buildRoomInfo();
       case SidePanelState.nothing:
         return SizedBox(
           width: 0,
@@ -300,6 +304,142 @@ class _RoomSidePanelState extends State<RoomSidePanel> {
         ],
       ),
     );
+  }
+
+  void onShowRoomInfo(void event) {
+    setState(() {
+      if (state == SidePanelState.roomInfo) {
+        state = SidePanelState.defaultView;
+      } else {
+        state = SidePanelState.roomInfo;
+      }
+    });
+  }
+
+  /// Builds a room info panel with room statistics and details
+  Widget buildRoomInfo() {
+    final room = widget.state.currentRoom;
+    if (room == null) return const SizedBox();
+
+    return SizedBox(
+      width: Layout.desktop ? 300 : null,
+      child: Column(
+        children: [
+          if (Layout.mobile)
+            RoomQuickAccessMenuViewMobile(
+              room: room,
+              key: ValueKey("quick_access_menu_${room.localId}"),
+            ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(12),
+              children: [
+                // Room avatar and name header
+                Center(
+                  child: Column(
+                    children: [
+                      if (room.avatar != null)
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundImage: room.avatar,
+                        )
+                      else
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: room.defaultColor,
+                          child: Icon(room.icon, size: 32, color: Colors.white),
+                        ),
+                      const SizedBox(height: 8),
+                      tiamat.Text.labelEmphasised(room.displayName),
+                      if (room.topic != null && room.topic!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: tiamat.Text.labelLow(room.topic!),
+                        ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 24),
+                // Room statistics
+                tiamat.Text.labelEmphasised("Room Info"),
+                const SizedBox(height: 8),
+                _infoRow(Icons.people, "Members",
+                    "${room.memberIds.length}"),
+                _infoRow(Icons.lock,
+                    "Encryption", room.isE2EE ? "Enabled" : "Disabled"),
+                _infoRow(Icons.access_time, "Last Activity",
+                    _formatTimestamp(room.lastEventTimestamp)),
+                _infoRow(Icons.notifications, "Unread",
+                    "${room.notificationCount}"),
+                _infoRow(Icons.star, "Favourite",
+                    room.isFavourite ? "Yes" : "No"),
+                _infoRow(Icons.tag, "Room ID", room.identifier),
+                const Divider(height: 24),
+                // Quick actions
+                tiamat.Text.labelEmphasised("Actions"),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ActionChip(
+                      avatar: const Icon(Icons.search, size: 18),
+                      label: const Text("Search"),
+                      onPressed: () => EventBus.startSearch.add(null),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.push_pin, size: 18),
+                      label: const Text("Pins"),
+                      onPressed: () =>
+                          EventBus.openPinnedMessages.add(null),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.people, size: 18),
+                      label: const Text("Members"),
+                      onPressed: () => setState(() {
+                        state = SidePanelState.defaultView;
+                      }),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 8),
+          tiamat.Text.labelLow(label),
+          const Spacer(),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTimestamp(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return "Just now";
+    if (diff.inHours < 1) return "${diff.inMinutes}m ago";
+    if (diff.inDays < 1) return "${diff.inHours}h ago";
+    if (diff.inDays < 30) return "${diff.inDays}d ago";
+    return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
   }
 
   void onToggleSidePanel(void event) {

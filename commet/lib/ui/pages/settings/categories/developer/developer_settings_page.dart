@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:commet/client/components/push_notification/notification_content.dart';
 import 'package:commet/client/components/push_notification/notification_manager.dart';
 import 'package:commet/config/app_config.dart';
+import 'package:commet/config/preferences/preference.dart';
 import 'package:commet/config/build_config.dart';
 import 'package:commet/config/platform_utils.dart';
 import 'package:commet/diagnostic/diagnostics.dart';
@@ -42,6 +44,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
       if (PlatformUtils.isAndroid) shortcuts(),
       backgroundTasks(),
       dumpDatabases(),
+      settingsBackup(),
       tiamat.Panel(
         header: "Other Settings",
         mode: TileType.surfaceContainerLow,
@@ -358,6 +361,91 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                 }
               }),
         ])
+      ],
+    );
+  }
+
+  /// Settings backup/restore: export all SharedPreferences as JSON, import from file
+  Widget settingsBackup() {
+    return ExpansionTile(
+      title: const tiamat.Text.labelEmphasised("Settings Backup"),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      collapsedBackgroundColor:
+          Theme.of(context).colorScheme.surfaceContainerLow,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: tiamat.Text.labelLow(
+            "Export or import all app preferences as a JSON file.",
+          ),
+        ),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          tiamat.Button(
+            text: "Export Settings",
+            onTap: () async {
+              final prefs = preferences;
+              // Access the SharedPreferences instance via the Preference static
+              final sp = Preference.preferences;
+              if (sp == null) return;
+
+              final keys = sp.getKeys();
+              final Map<String, dynamic> data = {};
+              for (final key in keys) {
+                data[key] = sp.get(key);
+              }
+
+              final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
+              final path = await FilePicker.platform.saveFile(
+                dialogTitle: "Export Settings",
+                fileName: "commet_settings.json",
+              );
+              if (path != null) {
+                await File(path).writeAsString(jsonStr);
+              }
+            },
+          ),
+          tiamat.Button(
+            text: "Import Settings",
+            onTap: () async {
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: ['json'],
+              );
+              if (result == null || result.files.isEmpty) return;
+
+              final file = File(result.files.single.path!);
+              final jsonStr = await file.readAsString();
+              final Map<String, dynamic> data = jsonDecode(jsonStr);
+
+              final sp = Preference.preferences;
+              if (sp == null) return;
+
+              for (final entry in data.entries) {
+                final key = entry.key;
+                final value = entry.value;
+                if (value is String) {
+                  await sp.setString(key, value);
+                } else if (value is int) {
+                  await sp.setInt(key, value);
+                } else if (value is double) {
+                  await sp.setDouble(key, value);
+                } else if (value is bool) {
+                  await sp.setBool(key, value);
+                } else if (value is List) {
+                  await sp.setStringList(
+                      key, value.cast<String>());
+                }
+              }
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("Settings imported. Restart app to apply.")),
+                );
+              }
+            },
+          ),
+        ]),
       ],
     );
   }

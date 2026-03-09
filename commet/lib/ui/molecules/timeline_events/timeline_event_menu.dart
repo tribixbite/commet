@@ -342,6 +342,28 @@ class TimelineEventMenu {
             onActionFinished?.call();
           },
         ),
+      // Bookmark toggle for any message event
+      if (event is TimelineEventMessage)
+        TimelineEventMenuEntry(
+          name: preferences.isBookmarked(event.eventId)
+              ? "Remove Bookmark"
+              : "Bookmark",
+          icon: preferences.isBookmarked(event.eventId)
+              ? Icons.bookmark_remove
+              : Icons.bookmark_add_outlined,
+          action: (BuildContext context) async {
+            if (preferences.isBookmarked(event.eventId)) {
+              await preferences.removeBookmark(event.eventId);
+            } else {
+              await preferences.addBookmark(
+                timeline.room.identifier,
+                event.eventId,
+                (event as TimelineEventMessage).plainTextBody,
+              );
+            }
+            onActionFinished?.call();
+          },
+        ),
       TimelineEventMenuEntry(
         name: promptShowSource,
         icon: Icons.code,

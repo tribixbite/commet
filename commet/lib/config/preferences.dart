@@ -382,6 +382,45 @@ class Preferences {
   NullableStringPreference lastDownloadLocation =
       NullableStringPreference("last_download_location", defaultValue: null);
 
+  // ---- Message Bookmarks (locally stored bookmarked messages) ----
+
+  static const String _bookmarksKey = "message_bookmarks";
+
+  /// Gets all bookmarked messages as a list of JSON strings
+  /// Each entry: {"room_id": "...", "event_id": "...", "preview": "...", "timestamp": 123}
+  List<Map<String, dynamic>> getBookmarks() {
+    final raw = _preferences?.getStringList(_bookmarksKey);
+    if (raw == null) return [];
+    return raw.map((s) => jsonDecode(s) as Map<String, dynamic>).toList();
+  }
+
+  /// Adds a message bookmark
+  Future<void> addBookmark(String roomId, String eventId, String preview) async {
+    final bookmarks = _preferences?.getStringList(_bookmarksKey) ?? [];
+    // Don't duplicate
+    if (bookmarks.any((s) => s.contains(eventId))) return;
+    bookmarks.add(jsonEncode({
+      'room_id': roomId,
+      'event_id': eventId,
+      'preview': preview,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    }));
+    await _preferences?.setStringList(_bookmarksKey, bookmarks);
+  }
+
+  /// Removes a message bookmark by event ID
+  Future<void> removeBookmark(String eventId) async {
+    final bookmarks = _preferences?.getStringList(_bookmarksKey) ?? [];
+    bookmarks.removeWhere((s) => s.contains(eventId));
+    await _preferences?.setStringList(_bookmarksKey, bookmarks);
+  }
+
+  /// Checks if a message is bookmarked
+  bool isBookmarked(String eventId) {
+    final bookmarks = _preferences?.getStringList(_bookmarksKey) ?? [];
+    return bookmarks.any((s) => s.contains(eventId));
+  }
+
   // ---- User Notes (private annotations about other users) ----
 
   static const String _userNotesPrefix = "user_note_";

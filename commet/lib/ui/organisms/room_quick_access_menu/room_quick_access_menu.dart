@@ -67,6 +67,10 @@ class RoomQuickAccessMenu {
               name: "Search",
               action: (context) => EventBus.startSearch.add(null),
               icon: Icons.search),
+        RoomQuickAccessMenuEntry(
+            name: "Room Info",
+            action: (context) => EventBus.openRoomInfo.add(null),
+            icon: Icons.info_outline),
       ],
       if (Layout.desktop)
         RoomQuickAccessMenuEntry(
