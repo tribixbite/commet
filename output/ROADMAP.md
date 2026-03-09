@@ -162,9 +162,9 @@ Commet is a mature Flutter Matrix client with strong foundations: full E2EE with
 
 - [ ] **User profiles 2.0** - Rich profiles with timezone, pronouns, bio (MSC4133)
 - [ ] **Community events** - Calendar events discoverable across spaces
-- [ ] **Public space discovery** - Browse and join public spaces
+- [x] **Public space discovery** - Public room directory supports spaces
 - [x] **User status messages** - Custom status with emoji
-- [ ] **Activity feed** - Cross-room activity stream
+- [x] **Activity feed** - Recent activity on home screen
 - [ ] **Reputation system** - Community trust scores
 
 ### Category D: Security & Privacy
@@ -179,10 +179,10 @@ Commet is a mature Flutter Matrix client with strong foundations: full E2EE with
 
 - [x] **Room state inspector** - Browse all state events in a room
 - [x] **Event debugger** - View raw event JSON for any message
-- [ ] **Custom slash commands** - User-definable command aliases
+- [x] **Custom slash commands** - User-definable command aliases with expansion
 - [ ] **Scripting/macros** - Simple automation via room events
 - [ ] **Webhook support** - Incoming webhooks to rooms
-- [ ] **API explorer** - Built-in Matrix CS API browser
+- [x] **API explorer** - Built-in Matrix CS API browser in developer settings
 - [x] **Performance dashboard** - Client stats, sync diagnostics, build info
 
 ---
