@@ -56,6 +56,13 @@ jobs:
           cd $PROJECT_PATH
           dart run scripts/codegen.dart
 
+      # Remove Termux-specific aapt2 override (absolute path to ARM64 binary
+      # that doesn't exist on CI) and ndk abiFilters lock
+      - name: Remove Termux build overrides
+        run: |
+          cd $PROJECT_PATH/android
+          sed -i '/aapt2FromMavenOverride/d' gradle.properties
+
       # Build per-ABI split APKs (arm64-v8a, armeabi-v7a, x86_64)
       # ORG_GRADLE_PROJECT_SPLIT_ABI disables ndk abiFilters in build.gradle
       # so --split-per-abi doesn't conflict with them.
