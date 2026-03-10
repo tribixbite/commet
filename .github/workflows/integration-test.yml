@@ -8,6 +8,9 @@ env:
   USER2_NAME: bob
   USER2_PW: CanWeFixIt
   PROJECT_PATH: commet
+  # Software rendering for headless CI (no GPU)
+  LIBGL_ALWAYS_SOFTWARE: '1'
+  FLUTTER_LINUX_RENDERER: software
 
 jobs:
   integration-test:
@@ -60,8 +63,6 @@ jobs:
           scripts/unit-test.sh
 
       - name: Build Linux binary
-        env:
-          LIBGL_ALWAYS_SOFTWARE: '1'
         run: |
           cd $PROJECT_PATH
           flutter build linux --debug \
@@ -71,8 +72,6 @@ jobs:
             --dart-define=USER1_PW=$USER1_PW
 
       - name: Test binary startup
-        env:
-          LIBGL_ALWAYS_SOFTWARE: '1'
         run: |
           cd $PROJECT_PATH
           echo "--- Checking binary dependencies ---"
@@ -82,8 +81,6 @@ jobs:
             timeout 15 build/linux/x64/debug/bundle/commet 2>&1 || echo "Binary exited with code $?"
 
       - name: Run Integration Tests  ─=≡Σ((( つ＞＜)つ
-        env:
-          LIBGL_ALWAYS_SOFTWARE: '1'
         run: |
           cd $PROJECT_PATH
           scripts/integration-test.sh
