@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
         
@@ -69,7 +69,7 @@ jobs:
           df -h
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
         
@@ -80,8 +80,9 @@ jobs:
           channel: 'stable'
 
       - name: Setup Java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: 17
 
       - name: Setup Tools
@@ -93,6 +94,9 @@ jobs:
         run: |
           cd $PROJECT_PATH
           dart run scripts/codegen.dart
+
+      - name: Remove Termux build overrides
+        run: sed -i '/aapt2FromMavenOverride/d' $PROJECT_PATH/android/gradle.properties
 
       - name: Build APK
         run: |
@@ -131,7 +135,7 @@ jobs:
           df -h
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
         
@@ -142,8 +146,9 @@ jobs:
           channel: 'stable'
 
       - name: Setup Java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: 17
 
       - name: Setup Tools
@@ -157,6 +162,9 @@ jobs:
           git apply scripts/apply_google_services.patch
           dart run scripts/codegen.dart
 
+      - name: Remove Termux build overrides
+        run: sed -i '/aapt2FromMavenOverride/d' $PROJECT_PATH/android/gradle.properties
+
       - name: Build APK
         run: |
           cd $PROJECT_PATH
@@ -166,7 +174,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
         
@@ -199,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
         
