@@ -59,6 +59,21 @@ jobs:
           cd $PROJECT_PATH
           scripts/unit-test.sh
 
+      - name: Check GL environment
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          sudo apt-get install -y mesa-utils || true
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 &
+          sleep 2
+          glxinfo | head -30 || echo "glxinfo failed"
+          eglinfo 2>&1 | head -30 || echo "eglinfo not available"
+          # Try launching the built binary directly with a timeout to see errors
+          cd $PROJECT_PATH
+          timeout 10 build/linux/x64/debug/bundle/commet 2>&1 || echo "Binary exited with code $?"
+          kill %1 || true
+
       - name: Run Integration Tests  ─=≡Σ((( つ＞＜)つ
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
