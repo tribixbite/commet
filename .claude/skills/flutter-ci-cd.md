@@ -70,9 +70,38 @@ Nightly builds skip signing (use debug key) since they're pre-release.
 3. `gh release view nightly` — confirm APKs are attached
 4. README badge links to `../../releases/tag/nightly`
 
+### Integration Test l10n Shim
+Integration tests import `../generated/l10n.dart` (relative path), but codegen only
+generates `lib/generated/l10n.dart`. The `integration_test/generated/` dir is gitignored.
+Fix: add a CI step after codegen to create a re-export shim:
+```yaml
+- name: Create l10n shim for integration tests
+  run: |
+    mkdir -p $PROJECT_PATH/integration_test/generated
+    echo "export 'package:commet/generated/l10n.dart';" > $PROJECT_PATH/integration_test/generated/l10n.dart
+```
+
+### Deprecated GitHub Actions (Critical)
+- `actions/upload-artifact@v3` is removed and auto-fails — must use `@v4`
+- `actions/checkout@v2` deprecated — use `@v4`
+- `actions/setup-java@v1` deprecated — use `@v4` with `distribution: 'temurin'`
+
+### Linux Desktop Build Dependencies
+For `desktop_webview_window` and keybinder plugins:
+```bash
+sudo apt-get install -y webkit2gtk-4.1 keybinder-3.0
+```
+
+### RoomVisibility Refactoring
+`RoomVisibility` was refactored from enum to sealed class hierarchy:
+- `RoomVisibility.invite` → `RoomVisibilityPrivate()`
+- `RoomVisibility.public` → `RoomVisibilityPublic()`
+- Use `isA<RoomVisibilityPrivate>()` matchers in tests
+
 ## Gotchas Encountered
 - `--release` builds fail without signing keys (storeFile missing)
 - Termux aapt2 path is absolute and CI doesn't have the binary
 - ndk abiFilters conflict with flutter's --split-per-abi splits
 - GITHUB_TOKEN needs explicit `contents: write` for release creation
 - Split APK build takes ~20 min on CI (3 ABIs x Rust native builds)
+- Integration tests timeout after 12 min — pre-existing issue with Synapse test infra
