@@ -40,9 +40,8 @@ jobs:
         run: |
           pulseaudio --start --exit-idle-time=-1
           pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=”Virtual_Speaker”
-          pactl load-module module-null-source source_name=virtual_mic source_properties=device.description=”Virtual_Mic”
           pactl set-default-sink virtual_speaker
-          pactl set-default-source virtual_mic
+          pactl set-default-source virtual_speaker.monitor
 
       - name: Start Synapse  [◯ ‸ ◯]
         run: |
