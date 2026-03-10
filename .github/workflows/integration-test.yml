@@ -75,9 +75,3 @@ jobs:
         run: |
           cd $PROJECT_PATH
           scripts/integration-test.sh
-
-      - name: Dump debug log
-        if: always()
-        run: |
-          echo "--- Integration test debug log ---"
-          cat /tmp/integration-test-debug.log 2>/dev/null || echo "No debug log found"
