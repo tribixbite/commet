@@ -59,20 +59,27 @@ jobs:
           cd $PROJECT_PATH
           scripts/unit-test.sh
 
-      - name: Check GL environment
+      - name: Build Linux binary
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
         run: |
-          sudo apt-get install -y mesa-utils || true
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1920x1080x24 &
-          sleep 2
-          glxinfo | head -30 || echo "glxinfo failed"
-          eglinfo 2>&1 | head -30 || echo "eglinfo not available"
-          # Try launching the built binary directly with a timeout to see errors
           cd $PROJECT_PATH
-          timeout 10 build/linux/x64/debug/bundle/commet 2>&1 || echo "Binary exited with code $?"
-          kill %1 || true
+          flutter build linux --debug \
+            --dart-define=HOMESERVER=$HOMESERVER \
+            --dart-define=BUILD_MODE=release \
+            --dart-define=USER1_NAME=$USER1_NAME \
+            --dart-define=USER1_PW=$USER1_PW
+
+      - name: Test binary startup
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          cd $PROJECT_PATH
+          echo "--- Checking binary dependencies ---"
+          ldd build/linux/x64/debug/bundle/commet 2>&1 | grep -i "not found" || echo "All shared libraries found"
+          echo "--- Launching binary under xvfb-run with 15s timeout ---"
+          xvfb-run -a -s "-screen 0 1920x1080x24" \
+            timeout 15 build/linux/x64/debug/bundle/commet 2>&1 || echo "Binary exited with code $?"
 
       - name: Run Integration Tests  ─=≡Σ((( つ＞＜)つ
         env:
@@ -80,3 +87,9 @@ jobs:
         run: |
           cd $PROJECT_PATH
           scripts/integration-test.sh
+
+      - name: Dump debug log
+        if: always()
+        run: |
+          echo "--- Integration test debug log ---"
+          cat /tmp/integration-test-debug.log 2>/dev/null || echo "No debug log found"
