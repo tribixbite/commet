@@ -163,6 +163,12 @@ class LoginPageState extends State<LoginPage> {
     var uri = Uri.https(input);
     var result = await loginClient!.setHomeserver(uri);
 
+    // Fall back to HTTP if HTTPS fails (e.g. local homeservers)
+    if (!result.$1) {
+      uri = Uri.http(input);
+      result = await loginClient!.setHomeserver(uri);
+    }
+
     setState(() {
       loadingServerInfo = false;
       isServerValid = result.$1;

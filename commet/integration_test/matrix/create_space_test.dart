@@ -70,7 +70,7 @@ Future<void> _confirmCreateSpace(WidgetTester tester) async {
       .widgetWithText(tiamat.Button, T.current.promptConfirmSpaceCreation)
       .first);
 
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 Future<void> _setSpaceName(WidgetTester tester, String spaceName) async {
@@ -85,25 +85,25 @@ Future<void> _setSpaceName(WidgetTester tester, String spaceName) async {
 Future<void> _setPrivate(WidgetTester tester) async {
   await tester.tap(find.byType(tiamat.DropdownSelector<RoomVisibility>));
 
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 
   await tester.tap(find
       .widgetWithText(tiamat.Text, T.current.spaceVisibilityPrivateExplanation)
       .last);
 
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 Future<void> _setPublic(WidgetTester tester) async {
   await tester.tap(find.byType(tiamat.DropdownSelector<RoomVisibility>));
 
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 
   await tester.tap(find
       .widgetWithText(tiamat.Text, T.current.spaceVisibilityPublicExplanation)
       .last);
 
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 Future<void> _openMenu(WidgetTester tester, App app) async {
@@ -111,7 +111,7 @@ Future<void> _openMenu(WidgetTester tester, App app) async {
 
   await tester.login(app);
 
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 
   await tester.dragUntilVisible(
       find.widgetWithIcon(tiamat.ImageButton, Icons.add),
@@ -120,10 +120,10 @@ Future<void> _openMenu(WidgetTester tester, App app) async {
 
   await tester.tap(find.widgetWithIcon(tiamat.ImageButton, Icons.add));
 
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 
   await tester
       .tap(find.widgetWithText(InkWell, T.current.promptCreateNewSpace));
 
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 }

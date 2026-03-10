@@ -34,7 +34,7 @@ void main() {
     await tester.waitFor(
         () => find.byType(MatrixVerificationPage).evaluate().isNotEmpty);
 
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     var button = find.descendant(
         of: find.byType(MatrixVerificationPage),
@@ -48,7 +48,7 @@ void main() {
         .evaluate()
         .isNotEmpty);
 
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     button = find.text(T.current.promptConfirmEmojiMatches);
 
@@ -61,7 +61,7 @@ void main() {
         .evaluate()
         .isNotEmpty);
 
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(verification.isDone, equals(true));
     expect(verification.state, equals(KeyVerificationState.done));

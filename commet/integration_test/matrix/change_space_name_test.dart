@@ -35,7 +35,7 @@ void main() {
     await _openSpaceAppearanceSettings(tester);
 
     await tester.tap(find.widgetWithIcon(tiamat.IconButton, Icons.edit));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.enterText(find.byType(TextField), newName);
 
@@ -43,7 +43,7 @@ void main() {
 
     await tester.tap(find.byKey(DesktopSettingsPageState.backButtonKey));
 
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(space.displayName, equals(newName));
 
@@ -54,16 +54,16 @@ void main() {
 
 Future<void> _selectSpace(WidgetTester tester) async {
   await tester.tap(find.byType(SpaceIcon).first);
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 Future<void> _openSpaceSettings(WidgetTester tester) async {
   await tester.tap(find.byKey(SpaceSummaryViewState.spaceSettingsButtonKey));
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 Future<void> _openSpaceAppearanceSettings(WidgetTester tester) async {
   await tester.tap(find.widgetWithText(
       tiamat.TextButton, T.current.labelSpaceAppearanceSettings));
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
 }

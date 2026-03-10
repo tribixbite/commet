@@ -41,7 +41,7 @@ void main() {
 
     await tester.loginUser2(app);
 
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(app.clientManager.clients.length, equals(2));
     expect(

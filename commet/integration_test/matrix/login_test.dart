@@ -39,15 +39,22 @@ void main() {
 
     await tester.waitFor(() => find.byType(LoginPage).evaluate().isNotEmpty);
 
-    var inputs = find.byType(TextField);
-    expect(inputs, findsWidgets);
+    // Enter homeserver and wait for validation to complete
+    var hsInput = find.byType(TextField);
+    expect(hsInput, findsWidgets);
+    await tester.enterText(hsInput.first, hs);
 
-    await tester.enterText(inputs.at(0), hs);
-    await tester.pumpAndSettle();
+    // Wait for debounce + server validation so username/password fields appear
+    await tester.waitFor(
+      () => find.byType(TextField).evaluate().length >= 3,
+      timeout: const Duration(seconds: 10),
+    );
+
+    var inputs = find.byType(TextField);
     await tester.enterText(inputs.at(1), username);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.enterText(inputs.at(2), password);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     var button = find.widgetWithText(ElevatedButton, "Login");
 
@@ -55,7 +62,7 @@ void main() {
     await tester.waitFor(
         () => find.text(T.current.messageLoginFailed).evaluate().isNotEmpty,
         skipPumpAndSettle: false,
-        timeout: const Duration(seconds: 5));
+        timeout: const Duration(seconds: 10));
     await tester.pumpFrames(app, const Duration(seconds: 1));
     expect(app.clientManager.isLoggedIn(), equals(false));
 

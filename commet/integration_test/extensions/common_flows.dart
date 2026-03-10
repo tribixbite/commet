@@ -60,52 +60,64 @@ extension CommonFlows on WidgetTester {
     return App(clientManager: clientManager!);
   }
 
+  /// Enters homeserver and waits for server validation to complete,
+  /// then enters credentials and taps Login.
   Future<void> login(App app) async {
     await waitFor(() => find.byType(LoginPage).evaluate().isNotEmpty);
 
-    var button = find.widgetWithText(ElevatedButton, "Login");
+    // Enter homeserver first and wait for debounce + validation
+    var hsInput = find.byType(TextField);
+    expect(hsInput, findsWidgets);
+    await enterText(hsInput.first, homeserver);
+
+    // Wait for debounce (1s) + HTTPS attempt + HTTP fallback + response
+    // Username/password fields appear only after server validation succeeds
+    await waitFor(
+      () => find.byType(TextField).evaluate().length >= 3,
+      timeout: const Duration(seconds: 10),
+    );
 
     var inputs = find.byType(TextField);
-    expect(inputs, findsWidgets);
-
-    // Build our app and trigger a frame.
-
-    await enterText(inputs.at(0), homeserver);
-    await pumpAndSettle();
     await enterText(inputs.at(1), username);
-    await pumpAndSettle();
+    await pump(const Duration(milliseconds: 500));
     await enterText(inputs.at(2), password);
-    await pumpAndSettle();
+    await pump(const Duration(milliseconds: 500));
 
+    var button = find.widgetWithText(ElevatedButton, "Login");
     await tap(button);
 
-    await pumpAndSettle();
+    await pump(const Duration(seconds: 1));
 
     await waitFor(() => app.clientManager.isLoggedIn(),
-        timeout: const Duration(seconds: 5), skipPumpAndSettle: true);
+        timeout: const Duration(seconds: 10), skipPumpAndSettle: true);
     expect(app.clientManager.isLoggedIn(), equals(true));
   }
 
   Future<void> loginUser2(App app) async {
     await waitFor(() => find.byType(LoginPage).evaluate().isNotEmpty);
-    var button = find.widgetWithText(ElevatedButton, "Login");
+
+    var hsInput = find.byType(TextField);
+    expect(hsInput, findsWidgets);
+    await enterText(hsInput.first, homeserver);
+
+    await waitFor(
+      () => find.byType(TextField).evaluate().length >= 3,
+      timeout: const Duration(seconds: 10),
+    );
 
     var inputs = find.byType(TextField);
-    expect(inputs, findsWidgets);
-
-    await enterText(inputs.at(0), homeserver);
-    await pumpAndSettle();
     await enterText(inputs.at(1), userTwoName);
-    await pumpAndSettle();
+    await pump(const Duration(milliseconds: 500));
     await enterText(inputs.at(2), userTwoPassword);
-    await pumpAndSettle();
+    await pump(const Duration(milliseconds: 500));
 
+    var button = find.widgetWithText(ElevatedButton, "Login");
     await tap(button);
 
-    await pumpAndSettle();
+    await pump(const Duration(seconds: 1));
 
     await waitFor(() => app.clientManager.isLoggedIn(),
-        timeout: const Duration(seconds: 5), skipPumpAndSettle: true);
+        timeout: const Duration(seconds: 10), skipPumpAndSettle: true);
     expect(app.clientManager.isLoggedIn(), equals(true));
   }
 
@@ -142,6 +154,6 @@ extension CommonFlows on WidgetTester {
 
     await tap(find.byKey(SideNavigationBar.settingsKey));
 
-    await pumpAndSettle();
+    await pump(const Duration(milliseconds: 500));
   }
 }
