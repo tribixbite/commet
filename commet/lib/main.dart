@@ -195,14 +195,10 @@ WidgetsBinding ensureBindingInit() {
 
 /// Initializes the bare necessities for the app to run in headless mode
 Future<void> initNecessary() async {
-  print('[initNecessary] sqfliteFfiInit');
   sqfliteFfiInit();
-  print('[initNecessary] preferences.init');
   await preferences.init();
-  print('[initNecessary] initDatabaseServer');
   await initDatabaseServer();
 
-  print('[initNecessary] fileCache');
   fileCache = FileCache.getFileCacheInstance();
 
   await Future.wait([
@@ -210,9 +206,7 @@ Future<void> initNecessary() async {
     GlobalConfig.init(),
   ]);
 
-  print('[initNecessary] ClientManager.init');
   clientManager = await ClientManager.init();
-  print('[initNecessary] post-init');
   Diagnostics.setPostInit();
 
   shortcutsManager.init();
@@ -222,7 +216,6 @@ Future<void> initNecessary() async {
   ScheduledTaskRunner.start();
 
   NeedsPostLoginInit.doPostLoginInit();
-  print('[initNecessary] done');
 }
 
 /// Initializes everything that is needed to run in GUI mode

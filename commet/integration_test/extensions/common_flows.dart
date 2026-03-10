@@ -54,37 +54,28 @@ extension CommonFlows on WidgetTester {
   }
 
   Future<App> setupApp() async {
-    print('[setupApp] clearUserData');
     await clearUserData();
-    print('[setupApp] initNecessary');
     await initNecessary();
-    print('[setupApp] initGuiRequirements');
     await initGuiRequirements();
-    print('[setupApp] creating App');
     return App(clientManager: clientManager!);
   }
 
   /// Enters homeserver and waits for server validation to complete,
   /// then enters credentials and taps Login.
   Future<void> login(App app) async {
-    print('[login] waiting for LoginPage');
     await waitFor(() => find.byType(LoginPage).evaluate().isNotEmpty);
-    print('[login] LoginPage found');
 
     // Enter homeserver first and wait for debounce + validation
     var hsInput = find.byType(TextField);
     expect(hsInput, findsWidgets);
-    print('[login] entering homeserver: $homeserver');
     await enterText(hsInput.first, homeserver);
 
     // Wait for debounce (1s) + HTTPS attempt + HTTP fallback + response
     // Username/password fields appear only after server validation succeeds
-    print('[login] waiting for 3 TextFields (server validation)');
     await waitFor(
       () => find.byType(TextField).evaluate().length >= 3,
       timeout: const Duration(seconds: 10),
     );
-    print('[login] 3 TextFields found, entering credentials');
 
     var inputs = find.byType(TextField);
     await enterText(inputs.at(1), username);
@@ -92,16 +83,13 @@ extension CommonFlows on WidgetTester {
     await enterText(inputs.at(2), password);
     await pump(const Duration(milliseconds: 500));
 
-    print('[login] tapping Login button');
     var button = find.widgetWithText(ElevatedButton, "Login");
     await tap(button);
 
     await pump(const Duration(seconds: 1));
 
-    print('[login] waiting for isLoggedIn');
     await waitFor(() => app.clientManager.isLoggedIn(),
         timeout: const Duration(seconds: 10), skipPumpAndSettle: true);
-    print('[login] login complete');
     expect(app.clientManager.isLoggedIn(), equals(true));
   }
 
