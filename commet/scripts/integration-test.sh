@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Run integration tests headlessly in the Dart VM (no -d linux).
-# This avoids EGL/OpenGL requirements on headless CI runners while
-# still supporting real network I/O to the Synapse homeserver.
-flutter test integration_test/runner.dart \
+# Run integration tests on the Linux desktop device.
+# xvfb-run provides a virtual X display with GLX/EGL support.
+xvfb-run -a -s "-screen 0 1920x1080x24" \
+  flutter test integration_test/runner.dart -d linux \
   --dart-define=HOMESERVER=$HOMESERVER \
   --dart-define=BUILD_MODE=release \
   --dart-define=USER1_NAME=$USER1_NAME \
