@@ -47,7 +47,12 @@ jobs:
         run: |
           cd $PROJECT_PATH
           dart run scripts/codegen.dart
-          
+
+      - name: Create l10n shim for integration tests
+        run: |
+          mkdir -p $PROJECT_PATH/integration_test/generated
+          echo "export 'package:commet/generated/l10n.dart';" > $PROJECT_PATH/integration_test/generated/l10n.dart
+
       - name: Run Unit Tests  ε=ε=┌( >_<)┘
         run: |
           cd $PROJECT_PATH
